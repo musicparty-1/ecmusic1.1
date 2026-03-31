@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DJUser {
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  name               String?
+  password           String
+  plan               String    @default("DEMO")
+  subscriptionStatus String    @default("TRIAL")
+  subscriptionId     String?
+  customerId         String?
+  trialEndsAt        DateTime?
+  planExpiresAt      DateTime?
+  created_at         DateTime  @default(now())
+  events             Event[]
+
+  @@map("dj_users")
+}
+
+model Event {
+  id                Int      @id @default(autoincrement())
+  name              String
+  venue             String
+  status            String   @default("ACTIVE")
+  isRecitalMode     Boolean  @default(false)
+  maxVotesPerDevice Int      @default(3)
+  created_at        DateTime @default(now())
+  dj_id             Int
+  dj                DJUser   @relation(fields: [dj_id], references: [id])
+  songs             Song[]
+
+  @@map("events")
+}
+
+model Song {
+  id         Int      @id @default(autoincrement())
+  event_id   Int
+  title      String
+  artist     String
+  category   String?  @default("General")
+  played     Boolean  @default(false)
+  played_at  DateTime?
+  created_at DateTime @default(now())
+  event      Event    @relation(fields: [event_id], references: [id])
+  votes      Vote[]
+
+  @@map("songs")
+}
+
+model Vote {
+  id         Int      @id @default(autoincrement())
+  song_id    Int
+  device_id  String
+  created_at DateTime @default(now())
+  ip_address String?
+  user_agent String?
+  song       Song     @relation(fields: [song_id], references: [id])
+
+  @@map("votes")
+}
+
+model CatalogSong {
+  id     Int     @id @default(autoincrement())
+  title  String
+  artist String
+  genre  String? @default("General")
+
+  @@map("catalog_songs")
+}
+
+model EventTemplate {
+  id         Int            @id @default(autoincrement())
+  name       String
+  description String?
+  created_at DateTime       @default(now())
+  songs      TemplateSong[]
+
+  @@map("event_templates")
+}
+
+model TemplateSong {
+  id          Int           @id @default(autoincrement())
+  template_id Int
+  title       String
+  artist      String
+  category    String?       @default("General")
+  template    EventTemplate @relation(fields: [template_id], references: [id])
+
+  @@map("template_songs")
+}
