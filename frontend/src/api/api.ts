@@ -69,8 +69,8 @@ export const votes = {
 };
 
 export const auth = {
-  login: (email: string, pass: string) => api.post('/auth/login', { email, pass }),
-  register: (email: string, pass: string, name?: string) => api.post('/auth/register', { email, pass, name }),
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  register: (email: string, password: string, name?: string) => api.post('/auth/register', { email, password, name }),
 };
 
 export const billing = {

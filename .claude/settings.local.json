@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:8080/api)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:4173)",
+      "Bash(curl -s -w \"\\\\nSTATUS:%{http_code}\" -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"test@musicparty.com\"\",\"\"pass\"\":\"\"Test1234\"\"}')"
+    ]
+  }
+}

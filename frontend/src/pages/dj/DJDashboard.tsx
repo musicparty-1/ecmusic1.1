@@ -67,6 +67,7 @@ const DJDashboard = () => {
   const [catalogSuggestions, setCatalogSuggestions] = useState<{ id: number; title: string; artist: string; genre: string }[]>([]);
   const [showCatalogDropdown, setShowCatalogDropdown] = useState(false);
   const [billingStatus, setBillingStatus] = useState<{ plan: string; subscriptionStatus: string; daysLeft: number } | null>(null);
+  const [activeDevices, setActiveDevices] = useState<number>(0);
   const [albumArt, setAlbumArt] = useState<string | null>(null);
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
@@ -174,6 +175,9 @@ const DJDashboard = () => {
       });
       setPlayedSongs(played);
       setNowPlaying(played[0] || null);
+
+      const devicesRes = await events.getActiveDevices(id);
+      setActiveDevices(devicesRes.data.count ?? 0);
     } catch (err) {
       console.error('Error fetching ranking:', err);
     }
@@ -441,6 +445,7 @@ const DJDashboard = () => {
                 { label: 'VOTOS',   value: stats.totalVotes,    cls: 'chip-violet' },
                 { label: 'SONADAS', value: playedSongs.length,  cls: 'chip-green'  },
                 { label: 'ASIST',   value: stats.uniqueVoters,  cls: 'chip-amber'  },
+                { label: 'EN VIVO', value: activeDevices,       cls: 'chip-cyan'   },
               ].map(s => (
                 <div key={s.label} className={`chip ${s.cls}`}>
                   <span style={{ fontWeight: '800' }}>{s.value}</span>

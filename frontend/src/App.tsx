@@ -8,6 +8,8 @@ import EventAnalytics from './pages/dj/EventAnalytics';
 import BillingPage from './pages/dj/Billing';
 import PublicVote from './pages/public/PublicVote';
 import MirrorMode from './pages/public/MirrorMode';
+import Landing from './pages/Landing';
+import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
@@ -15,6 +17,9 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Landing */}
+        <Route path="/" element={<Landing />} />
+
         {/* Rutas Públicas */}
         <Route path="/event/:id" element={<PublicVote />} />
         <Route path="/mirror/:id" element={<MirrorMode />} />
@@ -30,9 +35,11 @@ function App() {
         <Route path="/dj/events/:id/summary" element={<ProtectedRoute><EventSummary /></ProtectedRoute>} />
         <Route path="/dj/events/:id/analytics" element={<ProtectedRoute><EventAnalytics /></ProtectedRoute>} />
 
-        {/* Redirecciones por defecto */}
+        {/* Redirección /dj → /dj/home */}
         <Route path="/dj" element={<Navigate to="/dj/home" replace />} />
-        <Route path="/" element={<Navigate to="/dj/login" replace />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
