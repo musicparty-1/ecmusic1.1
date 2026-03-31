@@ -10,8 +10,8 @@ interface Song {
   title: string;
   artist: string;
   votes: number;
-  played: boolean;
-  created_at: string;
+  played?: boolean;
+  created_at?: string;
 }
 
 interface EventData {
@@ -104,18 +104,15 @@ const MirrorMode = () => {
     if (!silent) setSyncing(true);
     if (!id) return;
     try {
-      const [evRes, songsRes] = await Promise.all([
+      const [evRes, rankingRes, playedRes] = await Promise.all([
         events.getOne(parseInt(id)),
-        songsApi.getByEvent(parseInt(id)),
+        songsApi.getRanking(parseInt(id)),
+        songsApi.getPlayedSongs(parseInt(id)),
       ]);
       setEventData(evRes.data);
-      const sorted: Song[] = [...songsRes.data].sort((a, b) => b.votes - a.votes);
-      setSongs(sorted);
-      const played = songsRes.data
-        .filter((s: Song) => s.played)
-        .sort((a: Song, b: Song) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setNowPlaying(played[0] || null);
-      prevIdsRef.current = sorted.map(s => s.id);
+      setSongs(rankingRes.data);
+      prevIdsRef.current = rankingRes.data.map((s: Song) => s.id);
+      setNowPlaying(playedRes.data[0] || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -131,9 +128,9 @@ const MirrorMode = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const unplayed = songs.filter(s => !s.played).slice(0, 7);
+  const unplayed = songs.slice(0, 7); // getRanking ya devuelve solo las no reproducidas, ordenadas por votos
   const maxVotes = unplayed[0]?.votes || 1;
-  const totalVotes = unplayed.reduce((acc, s) => acc + s.votes, 0);
+  const totalVotes = unplayed.reduce((acc, s) => acc + (s.votes || 0), 0);
 
   if (loading) {
     return (
