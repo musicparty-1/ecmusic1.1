@@ -34,17 +34,7 @@ const EventSummary = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleExport = async () => {
-    if (!id) return;
-    const res = await events.getExport(parseInt(id));
-    const blob = new Blob([res.data.content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = res.data.filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+
 
   if (loading) {
     return (
@@ -85,14 +75,6 @@ const EventSummary = () => {
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{summary.event.name}</h1>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📍 {summary.event.venue}</div>
           </div>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}
-          >
-            <Download size={16} /> Exportar Set
-          </button>
         </div>
 
         {/* Stats cards */}
@@ -170,8 +152,8 @@ const EventSummary = () => {
           </div>
         </div>
 
-        {/* Analytics link */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        {/* Acciones */}
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => navigate(`/dj/events/${id}/analytics`)}
@@ -179,6 +161,35 @@ const EventSummary = () => {
             style={{ fontSize: '0.8rem' }}
           >
             Ver Analytics Detallado →
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!summary) return;
+              // Construir CSV desde los datos ya cargados
+              const rows = [
+                ['Posición', 'Canción', 'Artista', 'Votos', '% del total'],
+                ...summary.topSongs.map((s, i) => [
+                  i + 1,
+                  `"${s.title.replace(/"/g, '""')}"`,
+                  `"${s.artist.replace(/"/g, '""')}"`,
+                  s.votes,
+                  summary.totalVotes > 0 ? `${Math.round(s.votes / summary.totalVotes * 100)}%` : '0%',
+                ]),
+              ];
+              const csv = rows.map(r => r.join(',')).join('\n');
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${summary.event.name}_resultados.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="btn-secondary"
+            style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Download size={14} /> Exportar CSV
           </button>
         </div>
 

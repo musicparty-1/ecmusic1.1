@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MusicParty</string>
+    <string name="app_description">Votá las canciones en eventos en vivo. Escaneá el QR, elegí tus favoritas y hacé que suenen.</string>
+</resources>

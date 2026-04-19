@@ -1,112 +1,104 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
-
-<head>
-  <meta charset="utf-8" />
-  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" href="/favicon.svg" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#020617" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="EC Music" />
-  <title>EC Music - Votación de Eventos</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-    rel="stylesheet" />
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "inverse-primary": "#6d3bd7",
-            "on-secondary": "#233144",
-            "inverse-on-surface": "#283044",
-            "on-error-container": "#ffdad6",
-            "surface-dim": "#0b1326",
-            "primary-fixed": "#e9ddff",
-            "on-secondary-fixed": "#0d1c2f",
-            "inverse-surface": "#dae2fd",
-            "primary-fixed-dim": "#d0bcff",
-            "on-secondary-fixed-variant": "#3a485c",
-            "outline": "#958ea0",
-            "tertiary-fixed": "#ffd9e4",
-            "on-tertiary-fixed-variant": "#8c0053",
-            "tertiary-fixed-dim": "#ffb0cd",
-            "surface": "#0b1326",
-            "on-background": "#dae2fd",
-            "tertiary": "#ffb0cd",
-            "surface-bright": "#31394d",
-            "secondary-fixed": "#d5e3fd",
-            "secondary": "#b9c7e0",
-            "surface-container-highest": "#2d3449",
-            "error": "#ffb4ab",
-            "primary": "#d0bcff",
-            "on-primary-container": "#340080",
-            "surface-container-high": "#222a3d",
-            "surface-container-lowest": "#060e20",
-            "on-surface-variant": "#cbc3d7",
-            "tertiary-container": "#f751a1",
-            "surface-container-low": "#131b2e",
-            "background": "#0b1326",
-            "on-tertiary-container": "#570032",
-            "error-container": "#93000a",
-            "on-tertiary": "#640039",
-            "surface-tint": "#d0bcff",
-            "secondary-container": "#3c4a5e",
-            "outline-variant": "#494454",
-            "on-primary": "#3c0091",
-            "surface-container": "#171f33",
-            "on-primary-fixed": "#23005c",
-            "on-tertiary-fixed": "#3e0022",
-            "secondary-fixed-dim": "#b9c7e0",
-            "on-primary-fixed-variant": "#5516be",
-            "surface-variant": "#2d3449",
-            "on-secondary-container": "#abb9d2",
-            "primary-container": "#a078ff",
-            "on-surface": "#dae2fd",
-            "on-error": "#690005"
+<html class="dark" lang="es" translate="no">
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="google" content="notranslate"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MusicParty" />
+    <title>MusicParty - Votación de Eventos</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-primary": "#6d3bd7",
+              "on-secondary": "#233144",
+              "inverse-on-surface": "#283044",
+              "on-error-container": "#ffdad6",
+              "surface-dim": "#0b1326",
+              "primary-fixed": "#e9ddff",
+              "on-secondary-fixed": "#0d1c2f",
+              "inverse-surface": "#dae2fd",
+              "primary-fixed-dim": "#d0bcff",
+              "on-secondary-fixed-variant": "#3a485c",
+              "outline": "#958ea0",
+              "tertiary-fixed": "#ffd9e4",
+              "on-tertiary-fixed-variant": "#8c0053",
+              "tertiary-fixed-dim": "#ffb0cd",
+              "surface": "#0b1326",
+              "on-background": "#dae2fd",
+              "tertiary": "#ffb0cd",
+              "surface-bright": "#31394d",
+              "secondary-fixed": "#d5e3fd",
+              "secondary": "#b9c7e0",
+              "surface-container-highest": "#2d3449",
+              "error": "#ffb4ab",
+              "primary": "#d0bcff",
+              "on-primary-container": "#340080",
+              "surface-container-high": "#222a3d",
+              "surface-container-lowest": "#060e20",
+              "on-surface-variant": "#cbc3d7",
+              "tertiary-container": "#f751a1",
+              "surface-container-low": "#131b2e",
+              "background": "#0b1326",
+              "on-tertiary-container": "#570032",
+              "error-container": "#93000a",
+              "on-tertiary": "#640039",
+              "surface-tint": "#d0bcff",
+              "secondary-container": "#3c4a5e",
+              "outline-variant": "#494454",
+              "on-primary": "#3c0091",
+              "surface-container": "#171f33",
+              "on-primary-fixed": "#23005c",
+              "on-tertiary-fixed": "#3e0022",
+              "secondary-fixed-dim": "#b9c7e0",
+              "on-primary-fixed-variant": "#5516be",
+              "surface-variant": "#2d3449",
+              "on-secondary-container": "#abb9d2",
+              "primary-container": "#a078ff",
+              "on-surface": "#dae2fd",
+              "on-error": "#690005"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
           },
-          fontFamily: {
-            "headline": ["Plus Jakarta Sans"],
-            "body": ["Inter"],
-            "label": ["Inter"]
-          },
-          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
-      },
-    }
-  </script>
-  <style>
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .neon-glow-primary {
-      box-shadow: 0 0 15px rgba(208, 188, 255, 0.3);
-    }
-
-    .neon-glow-tertiary {
-      box-shadow: 0 0 15px rgba(247, 81, 161, 0.3);
-    }
-
-    .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-  </style>
-</head>
-
-<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+      }
+    </script>
+    <style>
+      .glass-panel {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .neon-glow-primary {
+        box-shadow: 0 0 15px rgba(208, 188, 255, 0.3);
+      }
+      .neon-glow-tertiary {
+        box-shadow: 0 0 15px rgba(247, 81, 161, 0.3);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+  </head>
+  <body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container" translate="no">
+    <div id="root" translate="no"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

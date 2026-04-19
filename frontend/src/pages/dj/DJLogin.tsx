@@ -59,17 +59,21 @@ const DJLogin = () => {
         <div>
           {/* Logo */}
           <div style={{ marginBottom: '2.5rem' }}>
-            <img src="/logo.png" alt="EC Music" style={{
+            <div style={{
               width: 56, height: 56, borderRadius: '1rem',
-              marginBottom: '1.25rem', objectFit: 'cover',
+              background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '1.25rem',
               boxShadow: '0 0 28px rgba(124,58,237,0.4)',
-            }} />
+            }}>
+              <Zap size={28} color="white" fill="white" />
+            </div>
             <h1 style={{
               fontSize: '2rem', fontWeight: '800', margin: 0,
               letterSpacing: '-0.03em', lineHeight: 1.1,
             }}>
-              <span style={{ color: 'white' }}>EC </span>
-              <span style={{ color: '#8b5cf6' }}>Music</span>
+              <span style={{ color: 'white' }}>Music</span>
+              <span style={{ color: '#8b5cf6' }}>Party</span>
             </h1>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '0.4rem' }}>
               La consola del DJ moderno
@@ -128,13 +132,16 @@ const DJLogin = () => {
           <div style={{ marginBottom: '2rem' }}>
             {/* Mobile logo — only visible on small screens */}
             <div className="login-mobile-logo">
-              <img src="/logo.png" alt="EC Music" style={{
+              <div style={{
                 width: 44, height: 44, borderRadius: '0.75rem',
-                objectFit: 'cover',
+                background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: '0 0 20px rgba(124,58,237,0.4)',
-              }} />
+              }}>
+                <Zap size={22} color="white" fill="white" />
+              </div>
               <span style={{ fontWeight: '800', fontSize: '1.3rem', letterSpacing: '-0.02em' }}>
-                EC <span style={{ color: '#8b5cf6' }}>Music</span>
+                Music<span style={{ color: '#8b5cf6' }}>Party</span>
               </span>
             </div>
             <h2 style={{ fontSize: '1.8rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>
@@ -300,6 +307,24 @@ const DJLogin = () => {
               </motion.div>
             )}
 
+            {/* Forgot password */}
+            <div style={{ textAlign: 'right', marginTop: '-0.4rem' }}>
+              <button
+                type="button"
+                onClick={() => navigate('/dj/forgot-password')}
+                style={{
+                  background: 'none', border: 'none', color: '#64748b',
+                  fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'inherit',
+                  padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#a78bfa')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+
             {/* Submit */}
             <motion.button
               type="submit"
@@ -329,7 +354,13 @@ const DJLogin = () => {
 
           {/* Footer */}
           <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.72rem', color: '#374151' }}>
-            Powered by <span style={{ color: '#a78bfa', fontWeight: '700' }}>EC Music</span>
+            Powered by <span style={{ color: '#a78bfa', fontWeight: '700' }}>MusicParty</span>
+            {' · '}
+            <button type="button" onClick={() => navigate('/terms')}
+              style={{ background: 'none', border: 'none', color: '#4b5563', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#a78bfa')} onMouseLeave={e => (e.currentTarget.style.color = '#4b5563')}>
+              Términos de uso
+            </button>
           </p>
         </motion.div>
       </div>

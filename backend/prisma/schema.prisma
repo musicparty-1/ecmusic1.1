@@ -3,40 +3,48 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model DJUser {
-  id                 Int       @id @default(autoincrement())
-  email              String    @unique
-  name               String?
-  password           String
-  plan               String    @default("DEMO")
-  subscriptionStatus String    @default("TRIAL")
-  subscriptionId     String?
-  customerId         String?
-  trialEndsAt        DateTime?
-  planExpiresAt      DateTime?
-  role               String    @default("DJ") // DJ, ADMIN
-  created_at         DateTime  @default(now())
-  events             Event[]
-  logs               EventLog[]
+  id                    Int       @id @default(autoincrement())
+  email                 String    @unique
+  name                  String?
+  password              String
+  plan                  String    @default("DEMO")
+  subscriptionStatus    String    @default("TRIAL")
+  subscriptionId        String?
+  customerId            String?
+  trialEndsAt           DateTime?
+  planExpiresAt         DateTime?
+  eventCredits          Int       @default(0)
+  role                  String    @default("DJ")
+  resetToken            String?
+  resetTokenExpiresAt   DateTime?
+  refreshToken          String?
+  emailVerified         Boolean   @default(false)
+  emailVerificationToken String?
+  created_at            DateTime  @default(now())
+  events                Event[]
+  logs                  EventLog[]
 
   @@map("dj_users")
 }
 
 model Event {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   name              String
   venue             String
-  status            String   @default("ACTIVE")
-  isRecitalMode     Boolean  @default(false)
-  maxVotesPerDevice Int      @default(3)
-  event_date        DateTime @default(now())
-  created_at        DateTime @default(now())
+  status            String    @default("ACTIVE")
+  isRecitalMode     Boolean   @default(false)
+  maxVotesPerDevice Int       @default(3)
+  startDate         DateTime?
+  endDate           DateTime?
+  logoUrl           String?
+  created_at        DateTime  @default(now())
   dj_id             Int
-  dj                DJUser   @relation(fields: [dj_id], references: [id])
+  dj                DJUser    @relation(fields: [dj_id], references: [id])
   songs             Song[]
   logs              EventLog[]
 
@@ -47,8 +55,8 @@ model EventLog {
   id         Int      @id @default(autoincrement())
   event_id   Int
   dj_id      Int
-  action     String   // CREATE, SUSPEND, LAUNCH, FINISH, UPDATE, DELETE
-  details    String?  // JSON string or description
+  action     String
+  details    String?
   created_at DateTime @default(now())
   event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
   dj         DJUser   @relation(fields: [dj_id], references: [id])
@@ -65,7 +73,7 @@ model Song {
   played     Boolean  @default(false)
   played_at  DateTime?
   created_at DateTime @default(now())
-  event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event      Event    @relation(fields: [event_id], references: [id])
   votes      Vote[]
 
   @@map("songs")
@@ -78,7 +86,7 @@ model Vote {
   created_at DateTime @default(now())
   ip_address String?
   user_agent String?
-  song       Song     @relation(fields: [song_id], references: [id], onDelete: Cascade)
+  song       Song     @relation(fields: [song_id], references: [id])
 
   @@map("votes")
 }

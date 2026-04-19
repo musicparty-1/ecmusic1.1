@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { events, songs as songsApi, votes } from '../../api/api';
 import { useDevice } from '../../hooks/useDevice';
-import { Search, ThumbsUp, Music, CheckCircle2, PartyPopper, TrendingUp, TrendingDown, Minus, Users } from 'lucide-react';
+import { Search, ThumbsUp, Music, CheckCircle2, TrendingUp, TrendingDown, Minus, MapPin, Zap, Radio } from 'lucide-react';
 
 interface FloatingEmoji { id: number; emoji: string; x: number; y: number; }
 const EMOJIS = ['❤️', '🔥', '🎵'];
@@ -55,7 +55,7 @@ const PublicVote = () => {
   const [fetchError, setFetchError] = useState(false);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [nowPlayingFlash, setNowPlayingFlash] = useState(false);
-  const [activeCount, setActiveCount] = useState(0);
+  const [voterCelebration, setVoterCelebration] = useState<Song | null>(null);
   const prevNowPlayingId = useRef<number | null>(null);
   const prevRankRef = useRef<Record<number, number>>({});
 
@@ -87,6 +87,16 @@ const PublicVote = () => {
       unplayed.forEach((s, i) => { newRank[s.id] = i; });
       prevRankRef.current = newRank;
 
+      // Liberar votos de canciones que ya sonaron: el slot vuelve a estar disponible
+      const playedIds = new Set(fetchedSongs.filter(s => s.played).map(s => s.id));
+      setVotedSongs(prev => {
+        const updated = prev.filter(id => !playedIds.has(id));
+        if (updated.length !== prev.length && id) {
+          try { localStorage.setItem(`voted_${id}`, JSON.stringify(updated)); } catch { /* quota */ }
+        }
+        return updated;
+      });
+
       setSongs(fetchedSongs);
       setFetchError(false);
 
@@ -101,16 +111,20 @@ const PublicVote = () => {
         if (newNowPlaying) {
           setNowPlayingFlash(true);
           setTimeout(() => setNowPlayingFlash(false), 900);
+          // Si el usuario votó por esta canción, mostrar celebración
+          let storedVotes: number[] = [];
+          try {
+            const stored = localStorage.getItem(`voted_${id}`);
+            storedVotes = stored ? JSON.parse(stored) : [];
+          } catch { /* */ }
+          if (storedVotes.includes(newNowPlaying.id)) {
+            setVoterCelebration(newNowPlaying);
+            confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 }, colors: ['#8b5cf6', '#ec4899', '#fbbf24', '#ffffff'], disableForReducedMotion: true });
+            setTimeout(() => setVoterCelebration(null), 5000);
+          }
         }
       }
       setNowPlaying(newNowPlaying);
-      
-      // Fetch active devices count
-      try {
-        const countRes = await events.getActiveDevices(parseInt(id));
-        setActiveCount(countRes.data.count || 0);
-      } catch { /* ignore */ }
-
     } catch (err) {
       console.error(err);
       setFetchError(true);
@@ -256,88 +270,200 @@ const PublicVote = () => {
 
   if (!hasEntered) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        style={{
-          height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem'
-        }}
+        style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}
       >
-        <motion.div 
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          className="glass-card" 
-          style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '2.5rem' }}
+        {/* Ambient background */}
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 55% at 80% 5%, rgba(124,58,237,0.2) 0%, transparent 60%), radial-gradient(ellipse 55% 40% at 15% 95%, rgba(236,72,153,0.12) 0%, transparent 60%)' }} />
+
+        <motion.div
+          initial={{ scale: 0.94, y: 28, opacity: 0 }}
+          animate={{ scale: 1, y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            width: '100%', maxWidth: '420px', position: 'relative',
+            background: 'rgba(13,17,23,0.85)', backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '24px', padding: '2.5rem 2rem', textAlign: 'center', overflow: 'hidden',
+          }}
         >
+          {/* Top glow line */}
+          <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.7), transparent)' }} />
+
+          {/* Icon */}
           <motion.div
-            animate={{ rotate: [0, -10, 10, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
+            animate={{ scale: [1, 1.06, 1] }}
+            transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut' }}
+            style={{
+              width: 80, height: 80, borderRadius: '22px', margin: '0 auto 1.5rem',
+              background: 'linear-gradient(135deg, #6d28d9, #8b5cf6, #ec4899)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 32px rgba(124,58,237,0.5), 0 0 0 1px rgba(139,92,246,0.2)',
+            }}
           >
-            <PartyPopper size={64} style={{ color: 'var(--primary)', marginBottom: '1.5rem', margin: '0 auto' }} />
+            <Music size={36} color="white" />
           </motion.div>
-          <h1 className="title-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{eventData?.name}</h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>📍 {eventData?.venue}</p>
+
+          {/* Event name */}
+          <h1 style={{
+            fontSize: '2rem', fontWeight: '800', letterSpacing: '-0.03em', lineHeight: 1.15,
+            background: 'linear-gradient(135deg, #fff 30%, #a78bfa)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            marginBottom: '0.75rem',
+          }}>
+            {eventData?.name}
+          </h1>
+
+          {/* Venue badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+            borderRadius: '9999px', padding: '0.3rem 0.9rem',
+            fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '1.75rem',
+          }}>
+            <MapPin size={11} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+            {eventData?.venue}
+          </div>
+
+          {/* Votes available box */}
+          <div style={{
+            background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)',
+            borderRadius: '14px', padding: '0.9rem 1.25rem', marginBottom: '1.5rem',
+          }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem', fontWeight: '700' }}>
+              Votos disponibles
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+              {Array.from({ length: eventData?.maxVotesPerDevice || 3 }).map((_, i) => (
+                <div key={i} style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+                  boxShadow: '0 2px 8px rgba(124,58,237,0.55)',
+                }} />
+              ))}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginLeft: '0.25rem', fontWeight: '600' }}>
+                × {eventData?.maxVotesPerDevice || 3}
+              </span>
+            </div>
+          </div>
+
+          {/* Pending notice */}
           {eventData?.status === 'PENDING' && (
             <div style={{
-              background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.35)',
-              borderRadius: '0.75rem', padding: '0.75rem 1rem', marginBottom: '1.25rem',
-              fontSize: '0.82rem', color: '#fbbf24', lineHeight: 1.5,
+              background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
+              borderRadius: '12px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
+              fontSize: '0.78rem', color: '#fbbf24', lineHeight: 1.6,
             }}>
-              ◷ <strong>Pre-votación abierta</strong> — el evento aún no comenzó.<br />
+              <strong>Pre-votación abierta</strong> — el evento aún no comenzó.<br />
               ¡Votá tus favoritas y ayudá a armar el setlist!
             </div>
           )}
-          <button
+
+          {/* CTA Button */}
+          <motion.button
             type="button"
             onClick={() => setHasEntered(true)}
-            className="btn-primary"
-            style={{ width: '100%', padding: '1rem', fontSize: '1.25rem' }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              width: '100%', height: '52px', border: 'none', borderRadius: '14px',
+              background: 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 55%, #ec4899 100%)',
+              color: 'white', fontWeight: '800', fontSize: '0.95rem', letterSpacing: '0.02em',
+              cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              boxShadow: '0 8px 28px rgba(124,58,237,0.5)',
+            }}
           >
-            {eventData?.status === 'PENDING' ? '⭐ Votar el setlist' : 'Entrar a votar'}
-          </button>
+            <Zap size={17} fill="white" />
+            {eventData?.status === 'PENDING' ? 'Votar el setlist' : 'Entrar a votar'}
+          </motion.button>
         </motion.div>
       </motion.div>
     );
   }
 
-  if (eventData?.status === 'SUSPENDED') {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="glass-card" 
-          style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '2.5rem', border: '1px solid rgba(239,68,68,0.3)' }}
-        >
-          <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🛑</div>
-          <h1 className="title-gradient" style={{ fontSize: '2rem', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #f87171, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Evento Suspendido
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Lo sentimos, este evento ha sido suspendido temporalmente por los organizadores.
-          </p>
-          <div style={{ fontSize: '0.85rem', color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '0.75rem', borderRadius: '0.5rem' }}>
-            📍 {eventData.venue}
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container" style={{ padding: '0 1rem', paddingBottom: '5rem' }}>
+    <div className="container" style={{ padding: '0 1rem', paddingBottom: '5rem', position: 'relative' }}>
+      {/* Ambient background */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(ellipse 65% 45% at 90% 0%, rgba(124,58,237,0.1) 0%, transparent 55%), radial-gradient(ellipse 45% 35% at 5% 100%, rgba(236,72,153,0.07) 0%, transparent 55%)' }} />
+
+      {/* ── VOTER CELEBRATION OVERLAY ── */}
+      <AnimatePresence>
+        {voterCelebration && (
+          <motion.div
+            key="voter-celebration"
+            initial={{ opacity: 0, y: 60, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 26 }}
+            style={{
+              position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+              zIndex: 9999, width: 'calc(100% - 2rem)', maxWidth: '420px',
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.95) 0%, rgba(236,72,153,0.95) 100%)',
+              borderRadius: '20px', padding: '1.5rem 1.75rem',
+              boxShadow: '0 16px 48px rgba(124,58,237,0.55), 0 0 0 1px rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(20px)',
+              cursor: 'pointer',
+            }}
+            onClick={() => setVoterCelebration(null)}
+          >
+            {/* Glow top line */}
+            <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], rotate: [0, -8, 8, 0] }}
+                transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                style={{ fontSize: '2.5rem', flexShrink: 0, lineHeight: 1 }}
+              >
+                🔥
+              </motion.div>
+              <div>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                  ¡Tu voto hizo la diferencia!
+                </div>
+                <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'white', lineHeight: 1.25, marginBottom: '0.15rem' }}>
+                  Vos ayudaste a que suene este tema
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', fontWeight: '500' }}>
+                  {voterCelebration.title} — {voterCelebration.artist}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {eventData?.status === 'PENDING' && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)',
-            borderRadius: '0.75rem', padding: '0.65rem 1rem', margin: '1rem 0',
-            fontSize: '0.8rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem',
+            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.22)',
+            borderRadius: '12px', padding: '0.65rem 1rem', margin: '0.75rem 0 0',
+            fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem',
           }}
         >
-          <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 2 }}>◷</motion.span>
+          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 2 }}>◷</motion.span>
           <span><strong>Pre-votación</strong> — el evento todavía no comenzó. Tus votos van a definir el setlist.</span>
+        </motion.div>
+      )}
+      {eventData?.status === 'FINISHED' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px', padding: '0.75rem 1rem', margin: '0.75rem 0 0',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+          }}
+        >
+          <span style={{ fontSize: '1.4rem' }}>🎤</span>
+          <div>
+            <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '0.1rem' }}>Evento finalizado</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>La votación cerró — este es el ranking final.</div>
+          </div>
         </motion.div>
       )}
       <motion.div
@@ -345,70 +471,74 @@ const PublicVote = () => {
         animate={{ y: 0, opacity: 1 }}
         style={{
           position: 'sticky', top: 0, zIndex: 10,
-          background: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(10px)',
-          margin: '0 -1rem', padding: '1rem',
-          borderBottom: '1px solid var(--glass-border)',
-          marginBottom: '2rem'
+          background: 'rgba(8,10,16,0.9)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          margin: '0 -1rem', padding: '0.85rem 1rem',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          marginBottom: '1.5rem',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <motion.div
-            animate={nowPlaying ? { rotate: 360 } : {}}
-            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-            style={{
-              width: '40px', height: '40px', flexShrink: 0,
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: nowPlaying ? '0 0 16px rgba(139,92,246,0.5)' : 'none',
-            }}
-          >
-            <Music color="white" size={20} />
-          </motion.div>
+          {/* Vinyl disc / now playing icon */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <motion.div
+              animate={nowPlaying ? { rotate: 360 } : {}}
+              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+              style={{
+                width: 42, height: 42,
+                background: nowPlaying
+                  ? 'linear-gradient(135deg, #6d28d9, #8b5cf6, #ec4899)'
+                  : 'rgba(255,255,255,0.06)',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: nowPlaying ? '0 0 20px rgba(139,92,246,0.55)' : 'none',
+                transition: 'box-shadow 0.3s',
+              }}
+            >
+              <Radio size={18} color="white" />
+            </motion.div>
+            {nowPlaying && (
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: 'var(--success)', border: '2px solid #08080f', boxShadow: '0 0 6px rgba(34,197,94,0.7)' }} />
+            )}
+          </div>
+
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                {nowPlaying ? <span className="badge-live"><span className="badge-live-dot" />EN VIVO</span> : 'Ahora Sonando'}
-                {syncing && <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)', marginLeft: '0.25rem' }} />}
-              </div>
-              <span style={{ opacity: 0.2 }}>|</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--success)', fontWeight: '600' }}>
-                <Users size={12} />
-                <span>{activeCount} {activeCount === 1 ? 'persona' : 'personas'} votando</span>
-              </div>
+            <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
+              {nowPlaying ? <span className="badge-live"><span className="badge-live-dot" />EN VIVO</span> : <span>AHORA SONANDO</span>}
+              {syncing && <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--primary-light)' }} />}
             </div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={nowPlaying?.id ?? 'none'}
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
+                exit={{ opacity: 0, y: -5 }}
                 className={nowPlayingFlash ? 'destello' : ''}
-                style={{ fontWeight: '700', fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                style={{ fontWeight: '700', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}
               >
                 {nowPlaying ? nowPlaying.title : 'Esperando música...'}
               </motion.div>
             </AnimatePresence>
             {nowPlaying && (
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{nowPlaying.artist}</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.05rem' }}>{nowPlaying.artist}</div>
             )}
           </div>
 
           {/* Emoji reactions */}
-          <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
             {EMOJIS.map(emoji => (
               <button
                 key={emoji}
                 type="button"
                 onClick={(e) => launchEmoji(emoji, e)}
                 style={{
-                  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '9999px', width: '36px', height: '36px',
-                  cursor: 'pointer', fontSize: '1.1rem', display: 'flex',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '9999px', width: '34px', height: '34px',
+                  cursor: 'pointer', fontSize: '1rem', display: 'flex',
                   alignItems: 'center', justifyContent: 'center',
                   transition: 'transform 0.1s, background 0.15s',
                 }}
-                onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.85)')}
+                onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.82)')}
                 onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
               >
                 {emoji}
@@ -418,50 +548,82 @@ const PublicVote = () => {
         </div>
       </motion.div>
 
-      <header style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-          {eventData?.isRecitalMode ? 'VOTA EL PRÓXIMO TEMA' : 'Vota el próximo tema'}
-        </h2>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            {eventData?.isRecitalMode ? 'El artista quiere que elijas lo que sigue' : 'Tus votos deciden la noche'}
-          </p>
+      <header style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>
+              {eventData?.isRecitalMode ? 'Votá el próximo tema' : 'Votá el próximo tema'}
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+              {eventData?.isRecitalMode ? 'El artista elige lo que sigue' : 'Tus votos deciden la noche'}
+            </p>
+          </div>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)',
-            borderRadius: '9999px', padding: '0.35rem 0.9rem',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
+            background: 'rgba(13,17,23,0.8)', border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '14px', padding: '0.6rem 0.9rem', backdropFilter: 'blur(12px)',
           }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--primary)' }}>
-              {votedSongs.length}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              / {eventData?.maxVotesPerDevice || 3} votos
-            </span>
-            <div style={{ display: 'flex', gap: '3px', marginLeft: '2px' }}>
+            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '700' }}>Votos</div>
+            <div style={{ display: 'flex', gap: '4px' }}>
               {Array.from({ length: eventData?.maxVotesPerDevice || 3 }).map((_, i) => (
-                <div key={i} style={{
-                  width: '6px', height: '6px', borderRadius: '50%',
-                  background: i < votedSongs.length ? 'var(--primary)' : 'rgba(255,255,255,0.15)',
-                  transition: 'background 0.3s',
-                }} />
+                <motion.div
+                  key={i}
+                  animate={{ scale: i < votedSongs.length ? [1.3, 1] : 1 }}
+                  style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: i < votedSongs.length ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255,255,255,0.12)',
+                    boxShadow: i < votedSongs.length ? '0 0 6px rgba(124,58,237,0.6)' : 'none',
+                    transition: 'background 0.3s, box-shadow 0.3s',
+                  }}
+                />
               ))}
+            </div>
+            <div style={{ fontSize: '0.72rem', fontWeight: '700', color: votedSongs.length >= (eventData?.maxVotesPerDevice || 3) ? 'var(--text-muted)' : 'var(--primary-light)' }}>
+              {votedSongs.length}/{eventData?.maxVotesPerDevice || 3}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="glass-card" style={{ marginBottom: '2rem', padding: '0.75rem' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
-          <input 
-            type="text" 
-            placeholder="Buscar canción o artista..." 
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ width: '100%', paddingLeft: '2.5rem', background: 'transparent', border: 'none' }}
-          />
-        </div>
+      <div style={{
+        position: 'relative', marginBottom: '1.5rem',
+        background: 'rgba(13,17,23,0.7)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px',
+      }}>
+        <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <input
+          type="text"
+          placeholder="Buscar canción o artista..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ width: '100%', paddingLeft: '2.4rem', paddingRight: '1rem', height: '46px', background: 'transparent', border: 'none', fontSize: '0.85rem' }}
+        />
       </div>
+
+      {/* Banner sin votos disponibles */}
+      {votedSongs.length >= (eventData?.maxVotesPerDevice || 3) && eventData?.status !== 'FINISHED' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginBottom: '1.25rem',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(236,72,153,0.1))',
+            border: '1px solid rgba(124,58,237,0.35)',
+            borderRadius: '1rem', padding: '1rem 1.25rem',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>🎉</span>
+          <div>
+            <div style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.15rem' }}>
+              ¡Usaste todos tus votos!
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Votaste por {votedSongs.length} canción{votedSongs.length !== 1 ? 'es' : ''} — ahora esperá que suenen.
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <AnimatePresence mode="popLayout">
@@ -491,38 +653,59 @@ const PublicVote = () => {
                   className="glass-card vote-card"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem',
-                    border: isTop ? '1px solid rgba(139,92,246,0.4)' : undefined
+                    border: isTop ? '1px solid rgba(139,92,246,0.4)' :
+                      votedSongs.includes(song.id) ? '1px solid rgba(34,197,94,0.25)' :
+                      '1px solid rgba(255,255,255,0.06)',
+                    borderLeftWidth: '3px',
+                    borderLeftStyle: 'solid',
+                    borderLeftColor: isTop
+                      ? 'var(--primary)'
+                      : pos === 1 ? 'rgba(192,192,192,0.45)'
+                      : pos === 2 ? 'rgba(205,127,50,0.45)'
+                      : votedSongs.includes(song.id) ? 'rgba(34,197,94,0.55)'
+                      : 'transparent',
+                    boxShadow: isTop ? '0 4px 20px rgba(124,58,237,0.1)' : undefined,
                   }}
                 >
                   {/* Posición */}
                   <div style={{
                     width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                    background: isTop ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                    background: pos === 0
+                      ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                      : pos === 1 ? 'linear-gradient(135deg, #d4d4d4, #9ca3af)'
+                      : pos === 2 ? 'linear-gradient(135deg, #cd7f32, #b87333)'
+                      : 'rgba(255,255,255,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 'bold', fontSize: '0.8rem'
+                    fontWeight: '800', fontSize: pos < 3 ? '1rem' : '0.75rem',
+                    color: pos < 3 ? '#000' : 'var(--text-muted)',
+                    boxShadow: pos === 0 ? '0 2px 10px rgba(255,215,0,0.35)' :
+                      pos === 1 ? '0 2px 8px rgba(212,212,212,0.2)' :
+                      pos === 2 ? '0 2px 8px rgba(205,127,50,0.2)' : 'none',
                   }}>
-                    {pos + 1}
+                    {pos === 0 ? '🥇' : pos === 1 ? '🥈' : pos === 2 ? '🥉' : pos + 1}
                   </div>
 
                   {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</h3>
-                    {/* Barra de progreso */}
-                    {totalVotes > 0 && (
-                      <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '2px', margin: '4px 0', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>{song.title}</h3>
+                    {/* Barra de progreso con % */}
+                    <div style={{ margin: '5px 0 3px' }}>
+                      <div style={{ height: '5px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${Math.round((song.votes / totalVotes) * 100)}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
+                          animate={{ width: totalVotes > 0 ? `${Math.round((song.votes / totalVotes) * 100)}%` : '0%' }}
+                          transition={{ duration: 0.7, ease: 'easeOut' }}
                           style={{
-                            height: '100%', borderRadius: '2px',
+                            height: '100%', borderRadius: '99px',
                             background: isTop
                               ? 'linear-gradient(90deg, var(--primary), var(--accent))'
-                              : 'rgba(139,92,246,0.5)',
+                              : votedSongs.includes(song.id)
+                                ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                                : 'rgba(139,92,246,0.45)',
                           }}
                         />
                       </div>
-                    )}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{song.artist}</p>
                       {trend === 'up' && <TrendingUp size={12} style={{ color: 'var(--success)' }} />}
@@ -531,40 +714,77 @@ const PublicVote = () => {
                     </div>
                   </div>
 
-                  {/* Votos */}
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0, textAlign: 'right', marginRight: '0.5rem' }}>
-                    {song.votes > 0 && <div style={{ fontWeight: '600', color: isTop ? 'var(--primary)' : undefined }}>{song.votes}</div>}
-                    {song.votes > 0 && <div>votos</div>}
+                  {/* Votos + % */}
+                  <div style={{ flexShrink: 0, textAlign: 'right', marginRight: '0.4rem', minWidth: 40 }}>
+                    <motion.div
+                      key={song.votes}
+                      initial={song.votes > 0 ? { scale: 1.35, color: '#a78bfa' } : {}}
+                      animate={{ scale: 1, color: song.votes === 0 ? 'var(--text-muted)' : isTop ? 'var(--primary-light)' : 'var(--text-secondary)' }}
+                      transition={{ duration: 0.35 }}
+                      style={{ fontWeight: '800', fontSize: '1rem', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}
+                    >
+                      {song.votes === 0 ? '—' : song.votes}
+                    </motion.div>
+                    {totalVotes > 0 && song.votes > 0 && (
+                      <div style={{ fontSize: '0.65rem', color: isTop ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '700', marginTop: '0.1rem', fontVariantNumeric: 'tabular-nums' }}>
+                        {Math.round((song.votes / totalVotes) * 100)}%
+                      </div>
+                    )}
                   </div>
 
                   {/* Acción */}
                   {votedSongs.includes(song.id) ? (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} style={{ color: 'var(--success)', flexShrink: 0 }}>
-                      <CheckCircle2 size={28} />
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      style={{
+                        height: '38px', padding: '0 1rem', borderRadius: '9999px',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
+                        background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)',
+                        color: 'var(--success)', fontSize: '0.72rem', fontWeight: '800', letterSpacing: '0.06em',
+                      }}
+                    >
+                      <CheckCircle2 size={13} />
+                      VOTADO
                     </motion.div>
                   ) : votingId === song.id ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
-                      style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <div style={{ width: 20, height: 20, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
-                    </motion.div>
+                    <div style={{
+                      height: '38px', padding: '0 1.1rem', borderRadius: '9999px',
+                      display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0,
+                      background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)',
+                    }}>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
+                      >
+                        <div style={{ width: 14, height: 14, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                      </motion.div>
+                      <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.06em' }}>...</span>
+                    </div>
                   ) : (
                     <button
                       type="button"
                       title={`Votar por ${song.title}`}
                       onClick={() => handleVote(song.id)}
                       disabled={votedSongs.length >= (eventData?.maxVotesPerDevice || 3) || !!votingId}
-                      className="btn-primary vote-btn"
+                      className="vote-btn"
                       style={{
-                        width: '48px', height: '48px', padding: 0, borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        opacity: votedSongs.length >= (eventData?.maxVotesPerDevice || 3) ? 0.5 : 1,
-                        cursor: votedSongs.length >= (eventData?.maxVotesPerDevice || 3) ? 'not-allowed' : 'pointer'
+                        height: '38px', padding: '0 1.1rem', borderRadius: '9999px',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0,
+                        background: votedSongs.length >= (eventData?.maxVotesPerDevice || 3)
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'linear-gradient(135deg, #6d28d9, #8b5cf6)',
+                        border: votedSongs.length >= (eventData?.maxVotesPerDevice || 3)
+                          ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                        color: votedSongs.length >= (eventData?.maxVotesPerDevice || 3) ? '#64748b' : 'white',
+                        fontWeight: '800', fontSize: '0.72rem', letterSpacing: '0.06em',
+                        cursor: votedSongs.length >= (eventData?.maxVotesPerDevice || 3) ? 'not-allowed' : 'pointer',
+                        boxShadow: votedSongs.length >= (eventData?.maxVotesPerDevice || 3)
+                          ? 'none' : '0 4px 14px rgba(124,58,237,0.45)',
+                        transition: 'all 0.2s', fontFamily: 'inherit',
                       }}
                     >
-                      <ThumbsUp size={20} />
+                      <ThumbsUp size={13} />
+                      VOTAR
                     </button>
                   )}
                 </motion.div>
@@ -615,12 +835,25 @@ const PublicVote = () => {
 
       <footer style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        padding: '0.75rem', textAlign: 'center',
-        background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)',
-        fontSize: '0.75rem', color: 'var(--text-muted)',
-        borderTop: '1px solid var(--glass-border)'
+        background: 'rgba(8,10,16,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        padding: '0.6rem 1.25rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        zIndex: 50,
       }}>
-        Participando en {eventData?.name} • ID: {deviceId?.substring(0, 8)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 6px rgba(34,197,94,0.7)' }} />
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+            {eventData?.name}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>sincronizado</span>
+          {syncing
+            ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ width: 10, height: 10, border: '1.5px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+            : <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(34,197,94,0.5)' }} />
+          }
+        </div>
       </footer>
 
       {/* Offline banner (CSS index.css) */}
