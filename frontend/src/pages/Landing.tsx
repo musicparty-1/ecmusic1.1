@@ -53,15 +53,11 @@ const Landing = () => {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: '0.5rem',
-            background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={16} color="white" fill="white" />
-          </div>
+          <img src="/logo.png" alt="EC Music" style={{
+            width: 30, height: 30, borderRadius: '0.5rem', objectFit: 'cover'
+          }} />
           <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.02em' }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
           </span>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -146,7 +142,7 @@ const Landing = () => {
             maxWidth: 560,
             margin: '0 auto 2.5rem',
           }}>
-            MusicParty permite que los asistentes de tu evento voten en tiempo real
+            EC Music permite que los asistentes de tu evento voten en tiempo real
             las canciones que quieren escuchar. El DJ controla, el público decide.
           </p>
 
@@ -315,7 +311,7 @@ const Landing = () => {
         flexWrap: 'wrap', gap: '0.5rem',
         color: 'rgba(255,255,255,0.2)', fontSize: '0.78rem',
       }}>
-        <span>© 2026 MusicParty — El poder de la música en tus manos 🎧</span>
+        <span>© 2026 EC Music — El poder de la música en tus manos 🎧</span>
         <div style={{ display: 'flex', gap: '1.5rem' }}>
           <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dj/login')}>Login</span>
           <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dj/register')}>Registro</span>

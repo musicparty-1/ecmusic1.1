@@ -89,17 +89,13 @@ const DJRegister = () => {
       <div className="reg-panel-left">
         <div>
           <div style={{ marginBottom: '2.5rem' }}>
-            <div style={{
+            <img src="/logo.png" alt="EC Music" style={{
               width: 56, height: 56, borderRadius: '1rem',
-              background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '1.25rem',
+              marginBottom: '1.25rem', objectFit: 'cover',
               boxShadow: '0 0 24px rgba(139,92,246,0.35)',
-            }}>
-              <Zap size={28} color="white" fill="white" />
-            </div>
+            }} />
             <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, letterSpacing: '-0.03em', color: 'white' }}>
-              Music Party
+              EC Music
             </h1>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '0.4rem' }}>
               La consola del DJ moderno
@@ -158,16 +154,13 @@ const DJRegister = () => {
           <div style={{ marginBottom: '2rem' }}>
             {/* Mobile logo */}
             <div className="reg-mobile-logo">
-              <div style={{
+              <img src="/logo.png" alt="EC Music" style={{
                 width: 44, height: 44, borderRadius: '0.75rem',
-                background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                objectFit: 'cover',
                 boxShadow: '0 0 20px rgba(139,92,246,0.4)',
-              }}>
-                <Zap size={22} color="white" fill="white" />
-              </div>
+              }} />
               <span style={{ fontWeight: '800', fontSize: '1.3rem', letterSpacing: '-0.02em' }}>
-                Music<span style={{ color: '#8b5cf6' }}>Party</span>
+                EC <span style={{ color: '#8b5cf6' }}>Music</span>
               </span>
             </div>
             <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>
@@ -316,7 +309,7 @@ const DJRegister = () => {
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.72rem', color: '#475569' }}>
-            Powered by <span style={{ color: '#8b5cf6', fontWeight: '700' }}>MusicParty</span>
+            Powered by <span style={{ color: '#8b5cf6', fontWeight: '700' }}>EC Music</span>
           </p>
         </motion.div>
       </div>

@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { PlanModule } from './plan/plan.module';
 import { BillingModule } from './billing/billing.module';
+import { TelemetryModule } from './admin/telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { BillingModule } from './billing/billing.module';
       { name: 'default', ttl: 10000, limit: 40 },
       { name: 'burst', ttl: 60000, limit: 100 },
     ]),
-    PrismaModule, EventsModule, SongsModule, VotesModule, AuthModule, CatalogModule, PlanModule, BillingModule,
+    PrismaModule, EventsModule, SongsModule, VotesModule, AuthModule, CatalogModule, PlanModule, BillingModule, TelemetryModule,
   ],
   controllers: [AppController],
   providers: [

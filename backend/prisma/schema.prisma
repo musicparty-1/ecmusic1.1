@@ -18,8 +18,10 @@ model DJUser {
   customerId         String?
   trialEndsAt        DateTime?
   planExpiresAt      DateTime?
+  role               String    @default("DJ") // DJ, ADMIN
   created_at         DateTime  @default(now())
   events             Event[]
+  logs               EventLog[]
 
   @@map("dj_users")
 }
@@ -31,12 +33,27 @@ model Event {
   status            String   @default("ACTIVE")
   isRecitalMode     Boolean  @default(false)
   maxVotesPerDevice Int      @default(3)
+  event_date        DateTime @default(now())
   created_at        DateTime @default(now())
   dj_id             Int
   dj                DJUser   @relation(fields: [dj_id], references: [id])
   songs             Song[]
+  logs              EventLog[]
 
   @@map("events")
+}
+
+model EventLog {
+  id         Int      @id @default(autoincrement())
+  event_id   Int
+  dj_id      Int
+  action     String   // CREATE, SUSPEND, LAUNCH, FINISH, UPDATE, DELETE
+  details    String?  // JSON string or description
+  created_at DateTime @default(now())
+  event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  dj         DJUser   @relation(fields: [dj_id], references: [id])
+
+  @@map("event_logs")
 }
 
 model Song {
@@ -48,7 +65,7 @@ model Song {
   played     Boolean  @default(false)
   played_at  DateTime?
   created_at DateTime @default(now())
-  event      Event    @relation(fields: [event_id], references: [id])
+  event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
   votes      Vote[]
 
   @@map("songs")
@@ -61,7 +78,7 @@ model Vote {
   created_at DateTime @default(now())
   ip_address String?
   user_agent String?
-  song       Song     @relation(fields: [song_id], references: [id])
+  song       Song     @relation(fields: [song_id], references: [id], onDelete: Cascade)
 
   @@map("votes")
 }

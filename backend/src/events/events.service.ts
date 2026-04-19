@@ -9,15 +9,50 @@ export class EventsService {
     private planService: PlanService,
   ) {}
 
-  async findAllByDJ(djId: number) {
-    return this.prisma.event.findMany({
-      where: { dj_id: djId },
-      orderBy: { created_at: 'desc' },
-      include: { _count: { select: { songs: true } } },
-    });
+  private async logAction(eventId: number, djId: number, action: string, details?: any) {
+    try {
+      await (this.prisma as any).eventLog.create({
+        data: {
+          event_id: eventId,
+          dj_id: djId,
+          action,
+          details: details ? JSON.stringify(details) : null
+        }
+      });
+    } catch (e) {
+      console.error('Error logging action:', e);
+    }
   }
 
-  async create(data: { name: string; venue: string; dj_id: number; template_id?: number; status?: string }) {
+  async findAllByDJ(djId: number) {
+    const events = await this.prisma.event.findMany({
+      where: { dj_id: djId },
+      orderBy: { created_at: 'desc' },
+      include: {
+        _count: {
+          select: { songs: true }
+        }
+      },
+    });
+
+    // Enriquecemos cada evento con el conteo real de votos
+    return Promise.all(
+      events.map(async (event) => {
+        const votesCount = await this.prisma.vote.count({
+          where: { song: { event_id: event.id } },
+        });
+        return {
+          ...event,
+          _count: {
+            ...event._count,
+            votes: votesCount,
+          },
+        };
+      }),
+    );
+  }
+
+  async create(data: { name: string; venue: string; dj_id: number; template_id?: number; status?: string; event_date?: string }) {
     await this.planService.checkCanCreateEvent(data.dj_id);
 
     const { template_id, status, ...eventData } = data;
@@ -26,9 +61,12 @@ export class EventsService {
       data: {
         ...eventData,
         status: status ?? 'ACTIVE',
+        event_date: data.event_date ? new Date(data.event_date) : new Date(),
         maxVotesPerDevice: 3
       },
     });
+
+    await this.logAction(event.id, data.dj_id, 'CREATE', { template_id });
 
     if (template_id) {
       const template = await this.prisma.eventTemplate.findUnique({
@@ -80,17 +118,42 @@ export class EventsService {
   }
 
   async closeEvent(id: number) {
-    return this.prisma.event.update({
+    const event = await this.prisma.event.update({
       where: { id },
       data: { status: 'FINISHED' }
     });
+    await this.logAction(id, event.dj_id, 'FINISH');
+    return event;
+  }
+
+  async suspendEvent(id: number) {
+    const event = await this.prisma.event.update({
+      where: { id },
+      data: { status: 'SUSPENDED' }
+    });
+    await this.logAction(id, event.dj_id, 'SUSPEND');
+    return event;
+  }
+
+  async updateEvent(id: number, data: { name?: string; venue?: string; event_date?: string; status?: string }) {
+    const updateData: any = { ...data };
+    if (data.event_date) updateData.event_date = new Date(data.event_date);
+    
+    const event = await this.prisma.event.update({
+      where: { id },
+      data: updateData
+    });
+    await this.logAction(id, event.dj_id, 'UPDATE', data);
+    return event;
   }
 
   async launchEvent(id: number) {
-    return this.prisma.event.update({
+    const event = await this.prisma.event.update({
       where: { id },
       data: { status: 'ACTIVE' }
     });
+    await this.logAction(id, event.dj_id, 'LAUNCH');
+    return event;
   }
 
   async setMaxVotes(id: number, maxVotesPerDevice: number) {
@@ -245,5 +308,11 @@ export class EventsService {
     });
 
     return newEvent;
+  }
+
+  async delete(id: number) {
+    const event = await this.prisma.event.findUnique({ where: { id } });
+    if (!event) throw new NotFoundException('Evento no encontrado');
+    return this.prisma.event.delete({ where: { id } });
   }
 }

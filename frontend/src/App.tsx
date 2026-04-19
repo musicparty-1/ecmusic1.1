@@ -11,6 +11,8 @@ import MirrorMode from './pages/public/MirrorMode';
 import Landing from './pages/Landing';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
+import SuperAdmin from './pages/dj/SuperAdmin';
 import './index.css';
 
 function App() {
@@ -34,6 +36,7 @@ function App() {
         <Route path="/dj/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
         <Route path="/dj/events/:id/summary" element={<ProtectedRoute><EventSummary /></ProtectedRoute>} />
         <Route path="/dj/events/:id/analytics" element={<ProtectedRoute><EventAnalytics /></ProtectedRoute>} />
+        <Route path="/dj/master-control" element={<AdminProtectedRoute><SuperAdmin /></AdminProtectedRoute>} />
 
         {/* Redirección /dj → /dj/home */}
         <Route path="/dj" element={<Navigate to="/dj/home" replace />} />

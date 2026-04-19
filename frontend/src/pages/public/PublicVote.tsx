@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { events, songs as songsApi, votes } from '../../api/api';
 import { useDevice } from '../../hooks/useDevice';
-import { Search, ThumbsUp, Music, CheckCircle2, PartyPopper, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Search, ThumbsUp, Music, CheckCircle2, PartyPopper, TrendingUp, TrendingDown, Minus, Users } from 'lucide-react';
 
 interface FloatingEmoji { id: number; emoji: string; x: number; y: number; }
 const EMOJIS = ['❤️', '🔥', '🎵'];
@@ -55,6 +55,7 @@ const PublicVote = () => {
   const [fetchError, setFetchError] = useState(false);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [nowPlayingFlash, setNowPlayingFlash] = useState(false);
+  const [activeCount, setActiveCount] = useState(0);
   const prevNowPlayingId = useRef<number | null>(null);
   const prevRankRef = useRef<Record<number, number>>({});
 
@@ -103,6 +104,13 @@ const PublicVote = () => {
         }
       }
       setNowPlaying(newNowPlaying);
+      
+      // Fetch active devices count
+      try {
+        const countRes = await events.getActiveDevices(parseInt(id));
+        setActiveCount(countRes.data.count || 0);
+      } catch { /* ignore */ }
+
     } catch (err) {
       console.error(err);
       setFetchError(true);
@@ -292,6 +300,30 @@ const PublicVote = () => {
     );
   }
 
+  if (eventData?.status === 'SUSPENDED') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="glass-card" 
+          style={{ textAlign: 'center', maxWidth: '400px', width: '100%', padding: '2.5rem', border: '1px solid rgba(239,68,68,0.3)' }}
+        >
+          <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🛑</div>
+          <h1 className="title-gradient" style={{ fontSize: '2rem', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #f87171, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Evento Suspendido
+          </h1>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
+            Lo sentimos, este evento ha sido suspendido temporalmente por los organizadores.
+          </p>
+          <div style={{ fontSize: '0.85rem', color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '0.75rem', borderRadius: '0.5rem' }}>
+            📍 {eventData.venue}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="container" style={{ padding: '0 1rem', paddingBottom: '5rem' }}>
       {eventData?.status === 'PENDING' && (
@@ -334,9 +366,16 @@ const PublicVote = () => {
             <Music color="white" size={20} />
           </motion.div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              {nowPlaying ? <span className="badge-live"><span className="badge-live-dot" />EN VIVO</span> : 'Ahora Sonando'}
-              {syncing && <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)', marginLeft: '0.25rem' }} />}
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                {nowPlaying ? <span className="badge-live"><span className="badge-live-dot" />EN VIVO</span> : 'Ahora Sonando'}
+                {syncing && <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)', marginLeft: '0.25rem' }} />}
+              </div>
+              <span style={{ opacity: 0.2 }}>|</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--success)', fontWeight: '600' }}>
+                <Users size={12} />
+                <span>{activeCount} {activeCount === 1 ? 'persona' : 'personas'} votando</span>
+              </div>
             </div>
             <AnimatePresence mode="wait">
               <motion.div

@@ -4,7 +4,7 @@ import api, { events, songs as songsApi, catalog as catalogApi, billing as billi
 import {
   Plus, Music, List, QrCode,
   Power, ExternalLink, Settings, LogOut, Trophy,
-  BarChart2, FileText, Download, Trash2, ChevronUp, ChevronDown, X, Check, ArrowLeft, Zap,
+  BarChart2, FileText, Download, Trash2, ChevronUp, ChevronDown, ChevronRight, X, Check, ArrowLeft, Zap, History, Calendar,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRModal from '../../components/QRModal';
@@ -54,12 +54,17 @@ const DJDashboard = () => {
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [newEvent, setNewEvent] = useState({ name: '', venue: '', template_id: '', isPending: false });
+  const [newEvent, setNewEvent] = useState({ name: '', venue: '', date: new Date().toISOString().split('T')[0], template_id: '', isPending: false });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closedSummary, setClosedSummary] = useState<any>(null);
   const [showSongModal, setShowSongModal] = useState(false);
   const [showFullCatalogModal, setShowFullCatalogModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [showTemplatesSection, setShowTemplatesSection] = useState(false);
+  const [showPastEventsSection, setShowPastEventsSection] = useState(false);
+  const [selectedPastEvent, setSelectedPastEvent] = useState<any>(null);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [fullCatalog, setFullCatalog] = useState<any[]>([]);
   const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
   const [songList, setSongList] = useState<Song[]>([]);
@@ -159,6 +164,17 @@ const DJDashboard = () => {
     }
   };
 
+  const fetchPastEvents = async () => {
+    if (!djId) return;
+    try {
+      const res = await api.get(`/events?dj_id=${djId}`);
+      const finished = (res.data || []).filter((ev: any) => ev.status === 'FINISHED');
+      setPastEvents(finished);
+    } catch (err) {
+      console.error('Error fetching past events:', err);
+    }
+  };
+
   const fetchRanking = async (id: number) => {
     try {
       const res = await songsApi.getRanking(id);
@@ -195,6 +211,7 @@ const DJDashboard = () => {
   useEffect(() => {
     fetchEvents();
     fetchTemplates();
+    fetchPastEvents();
     billingApi.getStatus().then(r => setBillingStatus(r.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -278,6 +295,7 @@ const DJDashboard = () => {
       const res = await events.create({
         name: newEvent.name,
         venue: newEvent.venue,
+        event_date: newEvent.date,
         dj_id: djUser.id || 1,
         template_id: newEvent.template_id ? parseInt(newEvent.template_id) : undefined,
         status: newEvent.isPending ? 'PENDING' : 'ACTIVE',
@@ -362,8 +380,8 @@ const DJDashboard = () => {
   };
 
   const sectionLabel: React.CSSProperties = {
-    fontSize: '0.6rem', fontWeight: '800', letterSpacing: '0.12em',
-    color: '#4b5563', textTransform: 'uppercase', marginBottom: '0.65rem',
+    fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.12em',
+    color: '#4b5563', textTransform: 'uppercase', marginBottom: '0.85rem',
   };
 
   return (
@@ -373,9 +391,9 @@ const DJDashboard = () => {
       <nav style={{
         background: '#0a0a10',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
-        padding: '0 1.25rem',
-        height: '58px',
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
+        padding: '0 clamp(1rem, 2vw, 2rem)',
+        height: 'clamp(70px, 8vw, 100px)',
+        display: 'flex', alignItems: 'center', gap: 'clamp(0.5rem, 1.5vw, 1.5rem)',
         position: 'sticky', top: 0, zIndex: 100, flexShrink: 0,
         backdropFilter: 'blur(12px)',
       }}>
@@ -391,20 +409,18 @@ const DJDashboard = () => {
           >
             <ArrowLeft size={16} />
           </button>
-          <div style={{
-            width: 26, height: 26, borderRadius: '0.45rem',
-            background: 'linear-gradient(135deg,#7c3aed,#8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={14} color="white" fill="white" />
-          </div>
-          <span style={{ fontWeight: '800', fontSize: '0.85rem', letterSpacing: '-0.02em' }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+          <img src="/logo.png" alt="EC Music" style={{
+            width: 'clamp(32px, 4.5vw, 52px)', height: 'clamp(32px, 4.5vw, 52px)', 
+            borderRadius: '0.6rem', objectFit: 'cover'
+          }} />
+          <span style={{ fontWeight: '800', fontSize: 'clamp(0.85rem, 1.5vw, 1.3rem)', letterSpacing: '-0.02em' }}>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
           </span>
           <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 0.15rem' }} />
           {selectedEvent ? (
             <button
               type="button"
+              title="Cambiar de evento"
               onClick={() => { setShowEventsPanel(!showEventsPanel); setShowSettingsPanel(false); }}
               style={{
                 background: showEventsPanel ? 'rgba(255,255,255,0.06)' : 'none',
@@ -413,15 +429,16 @@ const DJDashboard = () => {
                 display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'white',
               }}
             >
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontWeight: '700', fontSize: '0.8rem', lineHeight: 1.2 }}>{selectedEvent.name}</div>
-                <div style={{ fontSize: '0.58rem', color: '#64748b', lineHeight: 1 }}>{selectedEvent.venue}</div>
+              <div style={{ textAlign: 'left', minWidth: 0 }}>
+                <div style={{ fontWeight: '700', fontSize: 'clamp(0.85rem, 1.5vw, 1.3rem)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedEvent.name}</div>
+                <div style={{ fontSize: 'clamp(0.6rem, 1vw, 0.9rem)', color: '#64748b', lineHeight: 1 }}>{selectedEvent.venue}</div>
               </div>
-              <ChevronDown size={11} style={{ color: '#64748b', flexShrink: 0 }} />
+              <ChevronDown size={window.innerWidth < 768 ? 14 : 20} style={{ color: '#64748b', flexShrink: 0 }} />
             </button>
           ) : (
             <button
               type="button"
+              title="Crear nuevo evento"
               onClick={() => setShowCreateModal(true)}
               style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '0.4rem', padding: '0.2rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', color: '#8b5cf6', fontWeight: '600' }}
             >
@@ -440,16 +457,16 @@ const DJDashboard = () => {
               <div className="badge-live-dot" />
               EN VIVO
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(0.3rem, 1vw, 0.8rem)', flexShrink: 0 }}>
               {[
                 { label: 'VOTOS',   value: stats.totalVotes,    cls: 'chip-violet' },
                 { label: 'SONADAS', value: playedSongs.length,  cls: 'chip-green'  },
                 { label: 'ASIST',   value: stats.uniqueVoters,  cls: 'chip-amber'  },
                 { label: 'EN VIVO', value: activeDevices,       cls: 'chip-cyan'   },
               ].map(s => (
-                <div key={s.label} className={`chip ${s.cls}`}>
-                  <span style={{ fontWeight: '800' }}>{s.value}</span>
-                  <span style={{ opacity: 0.65, fontSize: '0.6rem', letterSpacing: '0.07em' }}>{s.label}</span>
+                <div key={s.label} className={`chip ${s.cls}`} style={{ padding: 'clamp(0.2rem, 0.5vw, 0.5rem) clamp(0.4rem, 1vw, 1rem)', gap: '0.3rem' }}>
+                  <span style={{ fontWeight: '800', fontSize: 'clamp(0.75rem, 1.2vw, 1.1rem)' }}>{s.value}</span>
+                  <span style={{ opacity: 0.65, fontSize: 'clamp(0.5rem, 0.8vw, 0.75rem)', letterSpacing: '0.07em' }}>{s.label}</span>
                 </div>
               ))}
             </div>
@@ -477,29 +494,29 @@ const DJDashboard = () => {
           {/* Separator */}
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)', margin: '0 0.1rem' }} />
 
-          <button type="button" className="btn-pill dj-topbar-m3u" aria-label="Descargar set M3U" onClick={handleExportSet}>
-            <Download size={12} /> M3U
+          <button type="button" className="btn-pill" title="Proyectar pantalla gigante para el público" aria-label="Proyectar pantalla gigante" onClick={() => window.open(mirrorUrl, '_blank')} style={{ padding: '0.65rem 1.25rem', gap: '0.6rem', fontSize: '0.85rem' }}>
+            <ExternalLink size={18} /> PROYECTAR
           </button>
-          <button type="button" className="btn-pill" aria-label="Ver código QR del evento" onClick={() => setShowQRModal(true)}>
-            <QrCode size={12} /> VER QR
+          <button type="button" className="btn-pill" title="Ver y descargar código QR del evento" aria-label="Ver código QR del evento" onClick={() => setShowQRModal(true)} style={{ padding: '0.65rem 1.25rem', gap: '0.6rem', fontSize: '0.85rem' }}>
+            <QrCode size={18} /> VER QR
           </button>
 
           {/* Separator */}
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)', margin: '0 0.1rem' }} />
 
           {selectedEvent?.status === 'ACTIVE' && (
-            <button type="button" className="btn-pill" onClick={() => setShowCloseConfirm(true)}
-              style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
-              <Power size={12} /> CERRAR EVENTO
+            <button type="button" className="btn-pill" title="Cerrar y finalizar este evento" onClick={() => setShowCloseConfirm(true)}
+              style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)', padding: '0.65rem 1.25rem', gap: '0.6rem', fontSize: '0.85rem' }}>
+              <Power size={18} /> CERRAR EVENTO
             </button>
           )}
           {selectedEvent?.status === 'PENDING' && (
-            <button type="button" className="btn-pill"
+            <button type="button" className="btn-pill" title="Lanzar en vivo"
               onClick={async () => {
                 try { await events.launch(selectedEventId!); showToast('¡Evento lanzado en vivo!', 'success'); fetchEvents(); }
                 catch { showToast('Error al lanzar evento', 'error'); }
               }}
-              style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', background: 'rgba(251,191,36,0.06)' }}>
+              style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', background: 'rgba(251,191,36,0.06)', padding: '0.5rem 1rem', gap: '0.5rem' }}>
               ▶ LANZAR EN VIVO
             </button>
           )}
@@ -508,18 +525,20 @@ const DJDashboard = () => {
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)', margin: '0 0.1rem' }} />
 
           <button type="button" className="btn-pill"
+            title="Configuración del evento (Votos, Modo Recital)"
             aria-label="Configuración del evento"
             onClick={() => { setShowSettingsPanel(!showSettingsPanel); setShowEventsPanel(false); }}
-            style={{ background: showSettingsPanel ? 'rgba(255,255,255,0.08)' : undefined, padding: '0.3rem 0.6rem' }}
+            style={{ background: showSettingsPanel ? 'rgba(255,255,255,0.08)' : undefined, padding: '0.65rem 1rem' }}
           >
-            <Settings size={13} />
+            <Settings size={22} />
           </button>
           <button type="button" className="btn-pill"
+            title="Cerrar sesión"
             aria-label="Cerrar sesión"
             onClick={() => { localStorage.removeItem('dj_user'); navigate('/dj/login'); }}
-            style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)', padding: '0.3rem 0.6rem' }}
+            style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)', padding: '0.65rem 1rem' }}
           >
-            <LogOut size={13} />
+            <LogOut size={22} />
           </button>
         </div>
       </nav>
@@ -739,7 +758,7 @@ const DJDashboard = () => {
                   { icon: <BarChart2 size={13} />, label: 'Analytics', action: () => { selectedEventId && navigate(`/dj/events/${selectedEventId}/analytics`); setShowSettingsPanel(false); } },
                   { icon: <Settings size={13} />, label: 'Planes y billing', action: () => { navigate('/dj/billing'); setShowSettingsPanel(false); } },
                 ].map(item => (
-                  <button key={item.label} type="button" onClick={item.action}
+                  <button key={item.label} type="button" title={item.label} onClick={item.action}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.5rem 0.25rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', fontFamily: 'inherit' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#f8fafc')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
@@ -812,8 +831,8 @@ const DJDashboard = () => {
                           transition={{ duration: 0.18 }}
                           style={{
                             display: 'flex', flexDirection: 'column',
-                            padding: '0.6rem 0.8rem',
-                            borderRadius: '0.65rem',
+                            padding: 'clamp(0.75rem, 1.5vw, 1.5rem) clamp(1rem, 2vw, 2rem)',
+                            borderRadius: 'clamp(0.6rem, 1.2vw, 1.2rem)',
                             background: isTop ? medal!.bg : 'rgba(255,255,255,0.02)',
                             border: `1px solid ${isTop ? medal!.border : 'rgba(255,255,255,0.05)'}`,
                             position: 'relative', overflow: 'hidden',
@@ -843,21 +862,21 @@ const DJDashboard = () => {
                             {/* Song info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{
-                                fontSize: '0.82rem', fontWeight: index === 0 ? '700' : '600',
+                                fontSize: '1.35rem', fontWeight: index === 0 ? '900' : '800',
                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                 color: index === 0 ? '#fff' : '#cbd5e1',
                               }}>
                                 {song.title}
                               </div>
-                              <div style={{ fontSize: '0.64rem', color: '#475569', marginTop: '0.1rem' }}>
+                              <div style={{ fontSize: '1rem', color: '#64748b', marginTop: '0.2rem', fontWeight: '500' }}>
                                 {song.artist}
                               </div>
                             </div>
 
                             {/* Votes */}
                             <span style={{
-                              fontSize: '0.82rem', fontWeight: '800', flexShrink: 0,
-                              color: isTop ? medal!.color : '#374151',
+                              fontSize: '1.4rem', fontWeight: '900', flexShrink: 0,
+                              color: isTop ? medal!.color : '#374151', minWidth: '40px', textAlign: 'center'
                             }}>
                               {song.votes > 0 ? song.votes : '—'}
                             </span>
@@ -868,16 +887,18 @@ const DJDashboard = () => {
                               title="Marcar como sonó"
                               onClick={() => handleMarkAsPlayed(song.id)}
                               style={{
-                                width: 26, height: 26, borderRadius: '0.4rem', flexShrink: 0,
-                                background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+                                width: 'clamp(44px, 6vw, 64px)', 
+                                height: 'clamp(44px, 6vw, 64px)', 
+                                borderRadius: 'clamp(0.5rem, 1vw, 1rem)', flexShrink: 0,
+                                background: 'rgba(34,197,94,0.12)', border: '2px solid rgba(34,197,94,0.4)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 cursor: 'pointer', color: '#22c55e', padding: 0,
                                 transition: 'all 0.15s',
                               }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.22)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.25)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.12)'; e.currentTarget.style.transform = 'scale(1)'; }}
                             >
-                              <Check size={14} strokeWidth={2.5} />
+                              <Check size={window.innerWidth < 768 ? 24 : 36} strokeWidth={3} />
                             </button>
                           </div>
 
@@ -987,10 +1008,10 @@ const DJDashboard = () => {
                     border: '1px solid rgba(139,92,246,0.15)',
                     borderRadius: '0.65rem', padding: '0.6rem 0.75rem',
                   }}>
-                    <div style={{ fontWeight: '800', fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '0.15rem' }}>
+                    <div style={{ fontWeight: '800', fontSize: '1.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '0.2rem' }}>
                       {nowPlaying.title}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#8b5cf6' }}>{nowPlaying.artist}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#8b5cf6', fontWeight: '600' }}>{nowPlaying.artist}</div>
 
                     {/* Sound wave bars */}
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16, marginTop: '0.5rem' }}>
@@ -1170,20 +1191,51 @@ const DJDashboard = () => {
                       <Music size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                       <input type="text" placeholder="Nombre del evento" className="input-field" style={{ paddingLeft: '2.4rem' }} value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} autoFocus />
                     </div>
-                    <div style={{ position: 'relative' }}>
-                      <ExternalLink size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                      <input type="text" placeholder="Nombre del boliche / venue" className="input-field" style={{ paddingLeft: '2.4rem' }} value={newEvent.venue} onChange={(e) => setNewEvent({ ...newEvent, venue: e.target.value })} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div style={{ position: 'relative' }}>
+                        <ExternalLink size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                        <input type="text" placeholder="Lugar / Venue" className="input-field" style={{ paddingLeft: '2.4rem', width: '100%' }} value={newEvent.venue} onChange={(e) => setNewEvent({ ...newEvent, venue: e.target.value })} />
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <Calendar size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                        <input type="date" className="input-field" style={{ paddingLeft: '2.4rem', width: '100%' }} value={newEvent.date} onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })} />
+                      </div>
                     </div>
                   </div>
                 </div>
                 {templates.length > 0 && (
                   <div>
-                    <p style={{ fontSize: '0.65rem', fontWeight: '700', letterSpacing: '0.12em', color: 'var(--text-muted)', marginBottom: '0.85rem', textTransform: 'uppercase' }}>Playlist inicial (opcional)</p>
-                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => setNewEvent({ ...newEvent, template_id: '' })} style={{ padding: '0.4rem 0.9rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '600', border: `1px solid ${newEvent.template_id === '' ? 'var(--primary)' : 'rgba(255,255,255,0.12)'}`, background: newEvent.template_id === '' ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.04)', color: newEvent.template_id === '' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}>Lista vacía</button>
-                      {templates.map(t => (
-                        <button key={t.id} type="button" onClick={() => setNewEvent({ ...newEvent, template_id: String(t.id) })} style={{ padding: '0.4rem 0.9rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '600', border: `1px solid ${String(newEvent.template_id) === String(t.id) ? 'var(--primary)' : 'rgba(255,255,255,0.12)'}`, background: String(newEvent.template_id) === String(t.id) ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.04)', color: String(newEvent.template_id) === String(t.id) ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}>{t.name}</button>
-                      ))}
+                    <p style={{ fontSize: '0.65rem', fontWeight: '700', letterSpacing: '0.12em', color: 'var(--text-muted)', marginBottom: '0.65rem', textTransform: 'uppercase' }}>Playlist inicial (opcional)</p>
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        value={newEvent.template_id} 
+                        onChange={(e) => setNewEvent({ ...newEvent, template_id: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.85rem 1rem 0.85rem 2.5rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '0.75rem',
+                          color: 'white',
+                          fontSize: '0.9rem',
+                          appearance: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <option value="" style={{ background: '#111827' }}>- Evento vacío (sin canciones) -</option>
+                        {templates.map(t => (
+                          <option key={t.id} value={String(t.id)} style={{ background: '#111827' }}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', pointerEvents: 'none' }}>
+                        <Music size={16} />
+                      </div>
+                      <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                        <ChevronDown size={16} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1247,9 +1299,9 @@ const DJDashboard = () => {
               style={{ width: '100%', maxWidth: '520px', background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '1.5rem', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.7)' }}
             >
               <div style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.1))', padding: '1.5rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: '800', letterSpacing: '0.15em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Evento cerrado · Reporte final</div>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em' }}>{closedSummary.event.name}</h2>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>📍 {closedSummary.event.venue}</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.15em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Evento cerrado · Reporte final</div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em' }}>{closedSummary.event.name}</h2>
+                <div style={{ fontSize: '1rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>📍 {closedSummary.event.venue}</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 {[
@@ -1346,6 +1398,219 @@ const DJDashboard = () => {
                   </motion.button>
                 </div>
               </div>
+
+              {/* Boliche Playlists Section */}
+              <div style={{ padding: '0 1.75rem', marginBottom: '0.75rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowTemplatesSection(!showTemplatesSection)}
+                  style={{
+                    width: '100%', padding: '0.65rem 1.25rem', background: 'rgba(139,92,246,0.12)',
+                    border: '1px solid rgba(139,92,246,0.25)', borderRadius: '0.85rem',
+                    color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.12)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <Music size={15} /> 📀 PLAYLISTS PREDISEÑADAS (BOLICHE)
+                  </div>
+                  {showTemplatesSection ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+
+                {showTemplatesSection && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    style={{ 
+                      marginTop: '0.6rem', background: 'rgba(0,0,0,0.25)', borderRadius: '1rem', 
+                      border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' 
+                    }}
+                  >
+                    {!selectedTemplate ? (
+                      <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                        {templates.map(t => (
+                          <div key={t.id} onClick={() => setSelectedTemplate(t)}
+                            style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.1)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <div>
+                              <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>{t.name}</div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{t.songs?.length || 0} canciones</div>
+                            </div>
+                            <ChevronRight size={16} color="#64748b" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                          <button onClick={() => setSelectedTemplate(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#8b5cf6', cursor: 'pointer', display: 'flex', padding: '0.4rem', borderRadius: '0.5rem' }}><ArrowLeft size={16} /></button>
+                          <div>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', display: 'block' }}>{selectedTemplate.name}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{selectedTemplate.description}</span>
+                          </div>
+                        </div>
+                        <div style={{ maxHeight: '280px', overflowY: 'auto', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '0.75rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)' }}>
+                          {selectedTemplate.songs?.map((ts: any) => (
+                            <div key={ts.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.title}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{ts.artist}</div>
+                              </div>
+                              <button 
+                                onClick={async () => {
+                                  if (!selectedEventId) return;
+                                  try {
+                                    await events.addSongs(selectedEventId, [{ title: ts.title, artist: ts.artist }]);
+                                    const res = await songsApi.getByEvent(selectedEventId);
+                                    setSongList(res.data);
+                                    fetchRanking(selectedEventId);
+                                    showToast(`"${ts.title}" añadida`, 'success');
+                                  } catch { showToast('Error al añadir', 'error'); }
+                                }}
+                                style={{ background: 'rgba(34,197,94,0.15)', border: 'none', color: '#22c55e', borderRadius: '9999px', padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}
+                              >+ Añadir</button>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            if (!selectedEventId || !selectedTemplate.songs) return;
+                            try {
+                              setIsProcessing(true);
+                              const toAdd = selectedTemplate.songs.map((s: any) => ({ title: s.title, artist: s.artist }));
+                              await events.addSongs(selectedEventId, toAdd);
+                              const res = await songsApi.getByEvent(selectedEventId);
+                              setSongList(res.data);
+                              fetchRanking(selectedEventId);
+                              showToast(`Playlist "${selectedTemplate.name}" cargada`, 'success');
+                              setSelectedTemplate(null);
+                              setShowTemplatesSection(false);
+                            } catch { showToast('Error al cargar playlist', 'error'); }
+                            finally { setIsProcessing(false); }
+                          }}
+                          className="btn-primary" style={{ width: '100%', padding: '0.85rem', fontSize: '0.85rem', borderRadius: '0.75rem' }}
+                        >
+                          {isProcessing ? 'Cargando...' : 'CARGAR TODA LA PLAYLIST'}
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Past Events Import Section */}
+              <div style={{ padding: '0 1.75rem', marginBottom: '0.75rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowPastEventsSection(!showPastEventsSection)}
+                  style={{
+                    width: '100%', padding: '0.65rem 1.25rem', background: 'rgba(59,130,246,0.12)',
+                    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '0.85rem',
+                    color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.12)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <History size={15} /> 📀 IMPORTAR DE EVENTO ANTERIOR
+                  </div>
+                  {showPastEventsSection ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+
+                {showPastEventsSection && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    style={{ 
+                      marginTop: '0.6rem', background: 'rgba(0,0,0,0.25)', borderRadius: '1rem', 
+                      border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' 
+                    }}
+                  >
+                    {!selectedPastEvent ? (
+                      <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                        {pastEvents.length === 0 ? (
+                          <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>No hay eventos finalizados en el historial.</div>
+                        ) : (
+                          pastEvents.map(ev => (
+                            <div key={ev.id} onClick={async () => {
+                              try {
+                                const res = await events.getSummary(ev.id);
+                                setSelectedPastEvent({ ...ev, songs: res.data.songs });
+                              } catch { showToast('Error al cargar detalle', 'error'); }
+                            }}
+                              style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>{ev.name}</div>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{ev.venue} · {new Date(ev.created_at).toLocaleDateString()}</div>
+                              </div>
+                              <ChevronRight size={16} color="#64748b" />
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                          <button onClick={() => setSelectedPastEvent(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#60a5fa', cursor: 'pointer', display: 'flex', padding: '0.4rem', borderRadius: '0.5rem' }}><ArrowLeft size={16} /></button>
+                          <div>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', display: 'block' }}>{selectedPastEvent.name}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{selectedPastEvent.songs?.length || 0} canciones en este set</span>
+                          </div>
+                        </div>
+                        <div style={{ maxHeight: '280px', overflowY: 'auto', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '0.75rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)' }}>
+                          {selectedPastEvent.songs?.map((s: any) => (
+                            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.artist}</div>
+                              </div>
+                              <button 
+                                onClick={async () => {
+                                  if (!selectedEventId) return;
+                                  try {
+                                    await events.addSongs(selectedEventId, [{ title: s.title, artist: s.artist }]);
+                                    const res = await songsApi.getByEvent(selectedEventId);
+                                    setSongList(res.data);
+                                    fetchRanking(selectedEventId);
+                                    showToast('Añadida', 'success');
+                                  } catch { showToast('Error', 'error'); }
+                                }}
+                                style={{ background: 'rgba(34,197,94,0.15)', border: 'none', color: '#22c55e', borderRadius: '9999px', padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}
+                              >+ Añadir</button>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            if (!selectedEventId || !selectedPastEvent.songs) return;
+                            try {
+                              setIsProcessing(true);
+                              const toAdd = selectedPastEvent.songs.map((s: any) => ({ title: s.title, artist: s.artist }));
+                              await events.addSongs(selectedEventId, toAdd);
+                              const res = await songsApi.getByEvent(selectedEventId);
+                              setSongList(res.data);
+                              fetchRanking(selectedEventId);
+                              showToast(`Set de "${selectedPastEvent.name}" cargado`, 'success');
+                              setSelectedPastEvent(null);
+                              setShowPastEventsSection(false);
+                            } catch { showToast('Error al importar set', 'error'); }
+                            finally { setIsProcessing(false); }
+                          }}
+                          className="btn-primary" style={{ width: '100%', background: '#3b82f6', borderColor: '#3b82f6', color: '#fff', padding: '0.85rem', fontSize: '0.85rem', borderRadius: '0.75rem' }}
+                        >
+                          {isProcessing ? 'Cargando...' : 'CARGAR SET COMPLETO'}
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
               <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem 1.75rem 1.5rem' }}>
                 {songList.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', opacity: 0.5 }}>
@@ -1402,7 +1667,7 @@ const DJDashboard = () => {
               <div style={{ padding: '1.5rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <div>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff 40%, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CATÁLOGO COMPLETO</h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>Explorá y agregá desde la base de datos de MusicParty</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>Explorá y agregá desde la base de datos de EC Music</p>
                 </div>
                 <button type="button" aria-label="Cerrar" onClick={() => setShowFullCatalogModal(false)}
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.4rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -1413,6 +1678,219 @@ const DJDashboard = () => {
                 <input type="text" placeholder="Buscar canción, artista o género..." className="input-field" style={{ width: '100%' }} value={catalogSearchTerm}
                   onChange={(e) => setCatalogSearchTerm(e.target.value)}
                 />
+              </div>
+
+              {/* Boliche Playlists Section (Reused) */}
+              <div style={{ padding: '1rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowTemplatesSection(!showTemplatesSection)}
+                  style={{
+                    width: '100%', padding: '0.65rem 1.25rem', background: 'rgba(139,92,246,0.12)',
+                    border: '1px solid rgba(139,92,246,0.25)', borderRadius: '0.85rem',
+                    color: '#a78bfa', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.12)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <Music size={15} /> 📀 EXPLORAR POR PLAYLIST
+                  </div>
+                  {showTemplatesSection ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+
+                {showTemplatesSection && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    style={{ 
+                      marginTop: '0.6rem', background: 'rgba(0,0,0,0.25)', borderRadius: '1rem', 
+                      border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' 
+                    }}
+                  >
+                    {!selectedTemplate ? (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {templates.map(t => (
+                          <div key={t.id} onClick={() => setSelectedTemplate(t)}
+                            style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.1)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <div>
+                              <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>{t.name}</div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{t.songs?.length || 0} canciones</div>
+                            </div>
+                            <ChevronRight size={16} color="#64748b" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                          <button onClick={() => setSelectedTemplate(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#8b5cf6', cursor: 'pointer', display: 'flex', padding: '0.4rem', borderRadius: '0.5rem' }}><ArrowLeft size={16} /></button>
+                          <div style={{ minWidth: 0 }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedTemplate.name}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{selectedTemplate.songs?.length} canciones</span>
+                          </div>
+                        </div>
+                        <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '0.75rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)' }}>
+                          {selectedTemplate.songs?.map((ts: any) => (
+                            <div key={ts.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.title}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{ts.artist}</div>
+                              </div>
+                              <button 
+                                onClick={async () => {
+                                  if (!selectedEventId) return;
+                                  try {
+                                    await events.addSongs(selectedEventId, [{ title: ts.title, artist: ts.artist }]);
+                                    const res = await songsApi.getByEvent(selectedEventId);
+                                    setSongList(res.data);
+                                    fetchRanking(selectedEventId);
+                                    showToast(`"${ts.title}" añadida`, 'success');
+                                  } catch { showToast('Error al añadir', 'error'); }
+                                }}
+                                style={{ background: 'rgba(34,197,94,0.15)', border: 'none', color: '#22c55e', borderRadius: '9999px', padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}
+                              >+ Añadir</button>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            if (!selectedEventId || !selectedTemplate.songs) return;
+                            try {
+                              setIsProcessing(true);
+                              const toAdd = selectedTemplate.songs.map((s: any) => ({ title: s.title, artist: s.artist }));
+                              await events.addSongs(selectedEventId, toAdd);
+                              const res = await songsApi.getByEvent(selectedEventId);
+                              setSongList(res.data);
+                              fetchRanking(selectedEventId);
+                              showToast(`Playlist "${selectedTemplate.name}" cargada`, 'success');
+                              setSelectedTemplate(null);
+                              setShowTemplatesSection(false);
+                            } catch { showToast('Error al cargar playlist', 'error'); }
+                            finally { setIsProcessing(false); }
+                          }}
+                          className="btn-primary" style={{ width: '100%', padding: '0.8rem', fontSize: '0.8rem', borderRadius: '0.75rem' }}
+                        >
+                          {isProcessing ? 'Cargando...' : 'CARGAR TODA LA PLAYLIST'}
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Past Events Import Section (Reused in Catalog) */}
+              <div style={{ padding: '1rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowPastEventsSection(!showPastEventsSection)}
+                  style={{
+                    width: '100%', padding: '0.65rem 1.25rem', background: 'rgba(59,130,246,0.12)',
+                    border: '1px solid rgba(59,130,246,0.25)', borderRadius: '0.85rem',
+                    color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.12)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <History size={15} /> 📀 IMPORTAR DE EVENTO ANTERIOR
+                  </div>
+                  {showPastEventsSection ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+
+                {showPastEventsSection && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    style={{ 
+                      marginTop: '0.6rem', background: 'rgba(0,0,0,0.25)', borderRadius: '1rem', 
+                      border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' 
+                    }}
+                  >
+                    {!selectedPastEvent ? (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {pastEvents.length === 0 ? (
+                          <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>No hay eventos finalizados en el historial.</div>
+                        ) : (
+                          pastEvents.map(ev => (
+                            <div key={ev.id} onClick={async () => {
+                              try {
+                                const res = await events.getSummary(ev.id);
+                                setSelectedPastEvent({ ...ev, songs: res.data.songs });
+                              } catch { showToast('Error al cargar detalle', 'error'); }
+                            }}
+                              style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.1)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}>{ev.name}</div>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{ev.venue} · {new Date(ev.created_at).toLocaleDateString()}</div>
+                              </div>
+                              <ChevronRight size={16} color="#64748b" />
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                          <button onClick={() => setSelectedPastEvent(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#60a5fa', cursor: 'pointer', display: 'flex', padding: '0.4rem', borderRadius: '0.5rem' }}><ArrowLeft size={16} /></button>
+                          <div>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', display: 'block' }}>{selectedPastEvent.name}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{selectedPastEvent.songs?.length || 0} canciones</span>
+                          </div>
+                        </div>
+                        <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '0.75rem', padding: '0.5rem', background: 'rgba(0,0,0,0.1)' }}>
+                          {selectedPastEvent.songs?.map((s: any) => (
+                            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.artist}</div>
+                              </div>
+                              <button 
+                                onClick={async () => {
+                                  if (!selectedEventId) return;
+                                  try {
+                                    await events.addSongs(selectedEventId, [{ title: s.title, artist: s.artist }]);
+                                    const res = await songsApi.getByEvent(selectedEventId);
+                                    setSongList(res.data);
+                                    fetchRanking(selectedEventId);
+                                    showToast('Añadida', 'success');
+                                  } catch { showToast('Error', 'error'); }
+                                }}
+                                style={{ background: 'rgba(34,197,94,0.15)', border: 'none', color: '#22c55e', borderRadius: '9999px', padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer' }}
+                              >+ Añadir</button>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            if (!selectedEventId || !selectedPastEvent.songs) return;
+                            try {
+                              setIsProcessing(true);
+                              const toAdd = selectedPastEvent.songs.map((s: any) => ({ title: s.title, artist: s.artist }));
+                              await events.addSongs(selectedEventId, toAdd);
+                              const res = await songsApi.getByEvent(selectedEventId);
+                              setSongList(res.data);
+                              fetchRanking(selectedEventId);
+                              showToast(`Set de "${selectedPastEvent.name}" cargado`, 'success');
+                              setSelectedPastEvent(null);
+                              setShowPastEventsSection(false);
+                            } catch { showToast('Error al importar set', 'error'); }
+                            finally { setIsProcessing(false); }
+                          }}
+                          className="btn-primary" style={{ width: '100%', background: '#3b82f6', borderColor: '#3b82f6', color: '#fff', padding: '0.8rem', fontSize: '0.8rem', borderRadius: '0.75rem' }}
+                        >
+                          {isProcessing ? 'Cargando...' : 'CARGAR SET COMPLETO'}
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </div>
               <div style={{ overflowY: 'auto', flex: 1, padding: '0' }}>
                 {fullCatalog.filter(s => (s.title + ' ' + s.artist + ' ' + s.genre).toLowerCase().includes(catalogSearchTerm.toLowerCase())).map((song) => (

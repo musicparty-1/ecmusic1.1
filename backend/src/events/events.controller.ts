@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Delete, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { ActiveDevicesService } from './active-devices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -33,6 +33,18 @@ export class EventsController {
   @Post(':id/close')
   close(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.closeEvent(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/suspend')
+  suspend(@Param('id', ParseIntPipe) id: number) {
+    return this.eventsService.suspendEvent(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/update')
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: { name?: string; venue?: string; event_date?: string; status?: string }) {
+    return this.eventsService.updateEvent(id, body);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -93,5 +105,11 @@ export class EventsController {
   @Get(':id/active-devices')
   getActiveDevices(@Param('id', ParseIntPipe) id: number) {
     return { count: this.activeDevices.getActiveCount(id) };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.eventsService.delete(id);
   }
 }

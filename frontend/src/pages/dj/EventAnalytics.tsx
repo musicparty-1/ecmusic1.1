@@ -64,60 +64,71 @@ const EventAnalytics = () => {
   const maxHourlyCount = Math.max(...analytics.hourlyVotes.map((h) => h.count), 1);
 
   return (
-    <div style={{ background: '#020617', minHeight: '100vh', padding: '2rem 1rem', paddingBottom: '4rem' }}>
-      <div className="container" style={{ maxWidth: '760px' }}>
+    <div style={{ background: '#020617', minHeight: '100vh', padding: 'clamp(1.5rem, 4vw, 4rem) clamp(1rem, 3vw, 2rem)', paddingBottom: '6rem' }}>
+      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(1rem, 2vw, 2rem)', marginBottom: 'clamp(2rem, 5vw, 4rem)' }}>
           <button
             type="button"
             onClick={() => navigate(-1)}
             className="btn-secondary"
-            style={{ padding: '0.5rem', borderRadius: '50%' }}
+            style={{ 
+              width: 'clamp(40px, 6vw, 64px)', 
+              height: 'clamp(40px, 6vw, 64px)', 
+              borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0
+            }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={window.innerWidth < 768 ? 20 : 32} />
           </button>
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Analytics de pista</div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{eventName}</h1>
+            <div style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: '700' }}>Analytics de pista</div>
+            <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3.5rem)', fontWeight: '900', letterSpacing: '-0.03em', lineHeight: 1.1 }}>{eventName}</h1>
           </div>
         </div>
 
         {/* Resumen rápido */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-          <div className="glass-card" style={{ textAlign: 'center' }}>
-            <TrendingUp size={20} style={{ color: 'var(--primary)', margin: '0 auto 0.5rem' }} />
-            <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'var(--primary)' }}>{analytics.totalVotes}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Votos totales</div>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: window.innerWidth < 640 ? '1fr' : '1fr 1fr', 
+          gap: 'clamp(1rem, 3vw, 2.5rem)', 
+          marginBottom: 'clamp(2rem, 5vw, 4rem)' 
+        }}>
+          <div className="glass-card" style={{ textAlign: 'center', padding: 'clamp(1.5rem, 4vw, 3.5rem)' }}>
+            <TrendingUp size={window.innerWidth < 768 ? 30 : 48} style={{ color: 'var(--primary)', margin: '0 auto 1rem' }} />
+            <div style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: '900', color: 'var(--primary)', lineHeight: 1 }}>{analytics.totalVotes}</div>
+            <div style={{ fontSize: 'clamp(0.9rem, 2vw, 1.4rem)', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '600' }}>Votos totales</div>
           </div>
-          <div className="glass-card" style={{ textAlign: 'center' }}>
-            <Clock size={20} style={{ color: 'var(--accent)', margin: '0 auto 0.5rem' }} />
-            <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'var(--accent)' }}>{analytics.mostActiveHour || '—'}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Hora más activa</div>
+          <div className="glass-card" style={{ textAlign: 'center', padding: 'clamp(1.5rem, 4vw, 3.5rem)' }}>
+            <Clock size={window.innerWidth < 768 ? 30 : 48} style={{ color: 'var(--accent)', margin: '0 auto 1rem' }} />
+            <div style={{ fontSize: 'clamp(2.5rem, 8vw, 5.5rem)', fontWeight: '900', color: 'var(--accent)', lineHeight: 1 }}>{analytics.mostActiveHour || '—'}</div>
+            <div style={{ fontSize: 'clamp(0.9rem, 2vw, 1.4rem)', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '600' }}>Hora más activa</div>
           </div>
         </div>
 
         {/* Votos por hora */}
         {analytics.hourlyVotes.length > 0 && (
-          <div className="glass-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontWeight: 'bold', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-              <Clock size={16} /> Actividad por hora
+          <div className="glass-card" style={{ marginBottom: 'clamp(2rem, 5vw, 4rem)', padding: 'clamp(1.25rem, 3vw, 2.5rem)' }}>
+            <h3 style={{ fontWeight: '800', marginBottom: 'clamp(1.5rem, 4vw, 2.5rem)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: 'clamp(1.1rem, 3vw, 1.8rem)' }}>
+              <Clock size={window.innerWidth < 768 ? 20 : 32} /> Actividad por hora
             </h3>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '100px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(0.25rem, 1vw, 1rem)', height: 'clamp(120px, 20vw, 280px)' }}>
               {analytics.hourlyVotes.map((h) => (
-                <div key={h.hour} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                <div key={h.hour} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                   <div
                     style={{
                       width: '100%',
-                      height: `${Math.round((h.count / maxHourlyCount) * 80)}px`,
+                      height: `${Math.round((h.count / maxHourlyCount) * (window.innerWidth < 768 ? 100 : 240))}px`,
                       background: 'linear-gradient(180deg, var(--primary), var(--accent))',
-                      borderRadius: '4px 4px 0 0',
+                      borderRadius: 'clamp(4px, 1vw, 12px) clamp(4px, 1vw, 12px) 0 0',
                       minHeight: '4px',
                       transition: 'height 0.5s ease-out'
                     }}
                     title={`${h.count} votos`}
                   />
-                  <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{h.hour}h</span>
+                  <span style={{ fontSize: 'clamp(0.6rem, 1.2vw, 1.2rem)', color: 'var(--text-muted)', fontWeight: '700' }}>{h.hour}h</span>
                 </div>
               ))}
             </div>
@@ -125,34 +136,35 @@ const EventAnalytics = () => {
         )}
 
         {/* Votos por canción */}
-        <div className="glass-card">
-          <h3 style={{ fontWeight: 'bold', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <Music size={16} /> Votos por canción
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 3vw, 2.5rem)' }}>
+          <h3 style={{ fontWeight: '800', marginBottom: 'clamp(1.5rem, 4vw, 2.5rem)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: 'clamp(1.1rem, 3vw, 1.8rem)' }}>
+            <Music size={window.innerWidth < 768 ? 20 : 32} /> Votos por canción
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(1rem, 3vw, 2.5rem)' }}>
             {analytics.songStats.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Sin votos registrados.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem' }}>Sin votos registrados.</p>
             ) : (
               analytics.songStats.map((song, i) => (
                 <div key={song.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', alignItems: 'flex-end' }}>
                     <div style={{ minWidth: 0 }}>
-                      <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>
+                      <div style={{ fontWeight: '800', fontSize: 'clamp(0.9rem, 2.5vw, 1.75rem)', lineHeight: 1.2 }}>
                         {i === 0 && '🏆 '}{song.title}
-                      </span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}> · {song.artist}</span>
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.75rem, 1.8vw, 1.25rem)', fontWeight: '500', marginTop: '0.2rem' }}>{song.artist}</div>
                       {song.played && (
-                        <span style={{
-                          marginLeft: '0.5rem', fontSize: '0.65rem', padding: '0.1rem 0.4rem',
-                          background: 'rgba(16,185,129,0.15)', color: 'var(--success)', borderRadius: '0.25rem'
-                        }}>tocada</span>
+                        <div style={{
+                          marginTop: '0.4rem', fontSize: 'clamp(0.6rem, 1.2vw, 1rem)', padding: '0.2rem 0.6rem',
+                          background: 'rgba(16,185,129,0.15)', color: 'var(--success)', borderRadius: '0.4rem', fontWeight: '700',
+                          display: 'inline-block'
+                        }}>tocada</div>
                       )}
                     </div>
-                    <div style={{ flexShrink: 0, fontSize: '0.8rem', fontWeight: '600', marginLeft: '1rem' }}>
-                      {song.votes} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({song.percentage}%)</span>
+                    <div style={{ flexShrink: 0, fontSize: 'clamp(1rem, 3vw, 1.8rem)', fontWeight: '900', marginLeft: '1.5rem', textAlign: 'right' }}>
+                      {song.votes} <span style={{ color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.6em' }}>({song.percentage}%)</span>
                     </div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '2rem', height: '6px', overflow: 'hidden' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '2rem', height: 'clamp(8px, 1.5vw, 18px)', overflow: 'hidden' }}>
                     <div style={{
                       background: i === 0
                         ? 'linear-gradient(90deg, var(--primary), var(--accent))'

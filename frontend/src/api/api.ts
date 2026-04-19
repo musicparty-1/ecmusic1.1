@@ -34,13 +34,15 @@ export const catalog = {
 };
 
 export const events = {
-  create: (data: { name: string; venue: string; dj_id: number; template_id?: number; status?: string }) => api.post('/events', data),
+  create: (data: { name: string; venue: string; dj_id: number; template_id?: number; status?: string; event_date?: string }) => api.post('/events', data),
   delete: (id: number) => api.delete(`/events/${id}`),
   duplicate: (id: number) => api.post(`/events/${id}/duplicate`),
   launch: (id: number) => api.post(`/events/${id}/launch`),
   getOne: (id: number) => api.get(`/events/${id}`),
   getStats: (id: number) => api.get(`/events/${id}/stats`),
   close: (id: number) => api.post(`/events/${id}/close`),
+  suspend: (id: number) => api.post(`/events/${id}/suspend`),
+  update: (id: number, data: { name?: string; venue?: string; event_date?: string; status?: string }) => api.post(`/events/${id}/update`, data),
   toggleRecital: (id: number) => api.post(`/events/${id}/toggle-recital`),
   addSongs: (id: number, songs: { title: string; artist: string }[]) => api.post(`/events/${id}/songs`, { songs }),
   getTemplates: () => api.get('/event-templates'),

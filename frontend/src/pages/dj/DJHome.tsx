@@ -4,7 +4,7 @@ import api, { events, billing as billingApi } from '../../api/api';
 import {
   Search, Radio, BarChart2,
   FileText, Download, LogOut, Zap, Copy,
-  Music2, MapPin, Play, XCircle, Trash2,
+  Music2, MapPin, Play, XCircle, Trash2, Music, ChevronDown, Calendar, Edit,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,6 +15,7 @@ interface Event {
   status: string;
   isRecitalMode: boolean;
   maxVotesPerDevice: number;
+  event_date: string;
   created_at: string;
   _count?: { songs: number };
 }
@@ -26,10 +27,12 @@ const DJHome = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [newEvent, setNewEvent] = useState({ name: '', venue: '', template_id: '', isPending: false });
+  const [newEvent, setNewEvent] = useState({ name: '', venue: '', date: new Date().toISOString().split('T')[0], template_id: '', isPending: false });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [billingStatus, setBillingStatus] = useState<{ plan: string; subscriptionStatus: string; daysLeft: number } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<{ id: number; name: string; venue: string; date: string; status: string } | null>(null);
 
   const navigate = useNavigate();
   const djUser = JSON.parse(localStorage.getItem('dj_user') || '{}');
@@ -66,13 +69,14 @@ const DJHome = () => {
       const res = await api.post('/events', {
         name: newEvent.name,
         venue: newEvent.venue,
+        event_date: newEvent.date,
         dj_id: djUser.id || 1,
         template_id: newEvent.template_id ? parseInt(newEvent.template_id) : undefined,
         status: newEvent.isPending ? 'PENDING' : 'ACTIVE',
       });
       showToast(newEvent.isPending ? 'Pre-evento creado' : '¡Evento creado!');
       setShowCreateModal(false);
-      setNewEvent({ name: '', venue: '', template_id: '', isPending: false });
+      setNewEvent({ name: '', venue: '', date: new Date().toISOString().split('T')[0], template_id: '', isPending: false });
       await fetchEvents();
       if (!newEvent.isPending) {
         navigate('/dj/dashboard', { state: { eventId: res.data.id } });
@@ -128,6 +132,35 @@ const DJHome = () => {
     } catch { showToast('Error al cerrar evento', 'error'); }
   };
 
+  const handleSuspend = async (ev: Event, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await events.suspend(ev.id);
+      showToast('Evento suspendido', 'error');
+      await fetchEvents();
+    } catch { showToast('Error al suspender', 'error'); }
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editingEvent) return;
+    try {
+      setIsProcessing(true);
+      await events.update(editingEvent.id, {
+        name: editingEvent.name,
+        venue: editingEvent.venue,
+        event_date: editingEvent.date,
+        status: editingEvent.status
+      });
+      showToast('Evento actualizado');
+      setShowEditModal(false);
+      await fetchEvents();
+    } catch {
+      showToast('Error al actualizar evento', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleDelete = async (ev: Event, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirmDeleteId !== ev.id) {
@@ -143,7 +176,7 @@ const DJHome = () => {
   };
 
   const liveEvents = myEvents.filter(e => e.status === 'ACTIVE' || e.status === 'PENDING');
-  const historial = myEvents.filter(e => e.status === 'FINISHED');
+  const historial = myEvents.filter(e => e.status === 'FINISHED' || e.status === 'SUSPENDED');
 
   const filtered = (list: Event[]) =>
     search.trim()
@@ -157,7 +190,7 @@ const DJHome = () => {
     new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const totalSessions = myEvents.length;
-  const totalVotes = myEvents.reduce((acc, ev) => acc + (ev._count?.songs || 0), 0);
+  const totalVotes = myEvents.reduce((acc, ev) => acc + (ev._count?.votes || 0), 0);
 
   if (loading) return (
     <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -203,6 +236,7 @@ const DJHome = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <motion.button
               type="button"
+              title="Crear nuevo evento"
               onClick={() => setShowCreateModal(true)}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -337,17 +371,19 @@ const DJHome = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 }}
                   className="card-active"
+                  onClick={() => navigate('/dj/dashboard', { state: { eventId: ev.id } })}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {/* Left: live dot + info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
                         <motion.div
                           animate={{ opacity: [1, 0.3, 1] }}
                           transition={{ repeat: Infinity, duration: 1.4 }}
-                          style={{ width: 8, height: 8, borderRadius: '50%', background: ev.status === 'ACTIVE' ? '#22c55e' : '#f59e0b', flexShrink: 0 }}
+                          style={{ width: 8, height: 8, borderRadius: '50%', background: ev.status === 'ACTIVE' ? '#22c55e' : '#f59e0b', flexShrink: 0, marginTop: '0.45rem' }}
                         />
-                        <span style={{ fontWeight: '700', fontSize: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontWeight: '700', fontSize: '1rem', wordBreak: 'break-word', lineHeight: 1.2 }}>
                           {ev.name}
                         </span>
                         <span className="badge-live" style={ev.status === 'PENDING' ? {
@@ -356,8 +392,12 @@ const DJHome = () => {
                           {ev.status === 'ACTIVE' ? <><span className="badge-live-dot" /> EN VIVO</> : '◷ PRE-EVENTO'}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#64748b', fontSize: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b', fontSize: '0.75rem' }}>
                         <MapPin size={11} /> {ev.venue}
+                        <span style={{ opacity: 0.3 }}>|</span>
+                        <Calendar size={11} /> {formatDate(ev.event_date)}
+                        <span style={{ opacity: 0.3 }}>|</span>
+                        <Radio size={11} /> {ev._count?.votes || 0} votos
                       </div>
                     </div>
 
@@ -397,6 +437,32 @@ const DJHome = () => {
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(100,116,139,0.25)'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
                       >
                         <XCircle size={13} /> Cerrar
+                      </button>
+                      <button type="button" onClick={(e) => handleSuspend(ev, e)}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                          color: '#f87171', borderRadius: '9999px', padding: '0.35rem 0.85rem',
+                          cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700',
+                          display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'inherit',
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.5)'; (e.currentTarget as HTMLButtonElement).style.color = '#fecaca'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.25)'; (e.currentTarget as HTMLButtonElement).style.color = '#f87171'; }}
+                      >
+                        🛑 Suspender
+                      </button>
+                      <button type="button" onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingEvent({ id: ev.id, name: ev.name, venue: ev.venue, date: ev.event_date.split('T')[0], status: ev.status });
+                        setShowEditModal(true);
+                      }}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                          color: '#94a3b8', borderRadius: '9999px', padding: '0.35rem 0.85rem',
+                          cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700',
+                          display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'inherit',
+                        }}
+                      >
+                        <Edit size={13} /> Editar / Reprogramar
                       </button>
                       {/* Eliminar evento (con confirmación en dos pasos) */}
                       <AnimatePresence mode="wait">
@@ -493,27 +559,46 @@ const DJHome = () => {
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                    <span style={{ fontSize: '0.58rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: '9999px', background: 'rgba(255,255,255,0.06)', color: '#64748b', letterSpacing: '0.06em' }}>
-                      FINALIZADO
+                    <span style={{ 
+                      fontSize: '0.58rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: '9999px', 
+                      background: ev.status === 'SUSPENDED' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', 
+                      color: ev.status === 'SUSPENDED' ? '#f87171' : '#64748b', 
+                      letterSpacing: '0.06em' 
+                    }}>
+                      {ev.status === 'SUSPENDED' ? 'SUSPENDIDO' : 'FINALIZADO'}
                     </span>
                     <span style={{ fontSize: '0.65rem', color: '#475569' }}>
-                      {formatDate(ev.created_at)}
+                      {formatDate(ev.event_date)}
                     </span>
                   </div>
-                  <div style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.4rem', wordBreak: 'break-word', lineHeight: 1.3, minHeight: '2.4rem' }}>
                     {ev.name}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#475569', fontSize: '0.72rem', marginBottom: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#475569', fontSize: '0.72rem', marginBottom: '0.85rem' }}>
                     <MapPin size={10} /> {ev.venue}
+                    <span style={{ opacity: 0.3 }}>|</span>
+                    <Radio size={10} /> {ev._count?.votes || 0} votos
                   </div>
                   <div style={{ display: 'flex', gap: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.65rem' }}>
+                    <button type="button" onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingEvent({ id: ev.id, name: ev.name, venue: ev.venue, date: ev.event_date.split('T')[0], status: ev.status });
+                      setShowEditModal(true);
+                    }}
+                      style={{
+                        background: 'none', border: 'none', color: '#475569',
+                        cursor: 'pointer', padding: '0.35rem', display: 'flex', borderRadius: '0.4rem',
+                      }}
+                    >
+                      <Edit size={14} />
+                    </button>
                     {[
                       { icon: <FileText size={11} />, label: 'Resumen', action: (e: React.MouseEvent) => { e.stopPropagation(); navigate(`/dj/events/${ev.id}/summary`); } },
                       { icon: <BarChart2 size={11} />, label: 'Stats',   action: (e: React.MouseEvent) => { e.stopPropagation(); navigate(`/dj/events/${ev.id}/analytics`); } },
                       { icon: <Download size={11} />, label: 'CSV',     action: (e: React.MouseEvent) => handleExport(ev, e) },
                       { icon: <Copy size={11} />,     label: 'Dup',     action: (e: React.MouseEvent) => handleDuplicate(ev, e) },
                     ].map(btn => (
-                      <button key={btn.label} type="button"
+                      <button key={btn.label} type="button" title={btn.label}
                         onClick={btn.action}
                         style={{ flex: 1, background: 'none', border: 'none', color: '#475569', cursor: 'pointer', padding: '0.3rem', fontSize: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', borderRadius: '0.35rem', fontFamily: 'inherit', transition: 'color 0.15s' }}
                         onMouseEnter={e => (e.currentTarget.style.color = '#94a3b8')}
@@ -585,18 +670,14 @@ const DJHome = () => {
                 background: 'linear-gradient(180deg, rgba(124,58,237,0.08) 0%, transparent 100%)',
                 textAlign: 'center',
               }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: '0.875rem',
-                  background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 1rem',
-                  boxShadow: '0 0 20px rgba(124,58,237,0.4)',
-                }}>
-                  <Zap size={24} color="white" fill="white" />
-                </div>
+                  <img src="/logo.png" alt="EC Music" style={{
+                    width: 52, height: 52, borderRadius: '0.875rem',
+                    margin: '0 auto 1rem', objectFit: 'cover', display: 'block',
+                    boxShadow: '0 0 20px rgba(124,58,237,0.4)',
+                  }} />
                 <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>
-                  <span style={{ color: 'white' }}>Music</span>
-                  <span style={{ color: '#8b5cf6' }}>Party</span>
+                  <span style={{ color: 'white' }}>EC </span>
+                  <span style={{ color: '#8b5cf6' }}>Music</span>
                 </h2>
                 <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.3rem' }}>Iniciá tu evento en segundos</p>
               </div>
@@ -620,44 +701,74 @@ const DJHome = () => {
                       onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                     />
                   </div>
-                  <div style={{ position: 'relative' }}>
-                    <MapPin size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563', pointerEvents: 'none' }} />
-                    <input type="text" placeholder="Club / Boliche / Lugar" value={newEvent.venue}
-                      onChange={(e) => setNewEvent({ ...newEvent, venue: e.target.value })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box',
-                        paddingLeft: '2.6rem', paddingRight: '1rem', paddingTop: '0.8rem', paddingBottom: '0.8rem',
-                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '0.75rem', color: 'white', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
-                        transition: 'border-color 0.2s',
-                      }}
-                      onFocus={e => (e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)')}
-                      onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563', pointerEvents: 'none' }} />
+                      <input type="text" placeholder="Lugar / Club" value={newEvent.venue}
+                        onChange={(e) => setNewEvent({ ...newEvent, venue: e.target.value })}
+                        style={{
+                          width: '100%', boxSizing: 'border-box',
+                          paddingLeft: '2.6rem', paddingRight: '1rem', paddingTop: '0.8rem', paddingBottom: '0.8rem',
+                          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '0.75rem', color: 'white', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)')}
+                        onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                      />
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <Calendar size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563', pointerEvents: 'none' }} />
+                      <input type="date" value={newEvent.date}
+                        onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                        style={{
+                          width: '100%', boxSizing: 'border-box',
+                          paddingLeft: '2.6rem', paddingRight: '1rem', paddingTop: '0.8rem', paddingBottom: '0.8rem',
+                          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '0.75rem', color: 'white', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)')}
+                        onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Templates */}
                 {templates.length > 0 && (
                   <div>
-                    <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.1em', color: '#64748b', marginBottom: '0.65rem', textTransform: 'uppercase' }}>Playlist inicial</p>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      {['', ...templates.map(t => String(t.id))].map((tid, idx) => {
-                        const isActive = newEvent.template_id === tid;
-                        return (
-                          <button key={idx} type="button"
-                            onClick={() => setNewEvent({ ...newEvent, template_id: tid })}
-                            style={{
-                              padding: '0.3rem 0.85rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600',
-                              border: `1px solid ${isActive ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`,
-                              background: isActive ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-                              color: isActive ? '#8b5cf6' : '#64748b', cursor: 'pointer', fontFamily: 'inherit',
-                            }}
-                          >
-                            {tid === '' ? 'Vacía' : templates.find(t => String(t.id) === tid)?.name}
-                          </button>
-                        );
-                      })}
+                    <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.1em', color: '#64748b', marginBottom: '0.65rem', textTransform: 'uppercase' }}>Playlist inicial (opcional)</p>
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        value={newEvent.template_id} 
+                        onChange={(e) => setNewEvent({ ...newEvent, template_id: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem 0.75rem 2.5rem',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '0.75rem',
+                          color: 'white',
+                          fontSize: '0.85rem',
+                          appearance: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <option value="" style={{ background: '#0d1117' }}>- Evento vacío (sin canciones) -</option>
+                        {templates.map(t => (
+                          <option key={t.id} value={String(t.id)} style={{ background: '#0d1117' }}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#7c3aed', pointerEvents: 'none' }}>
+                        <Music size={14} />
+                      </div>
+                      <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }}>
+                        <ChevronDown size={14} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -742,6 +853,75 @@ const DJHome = () => {
             }}
           >
             {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── EDIT EVENT MODAL ─────────────────────────── */}
+      <AnimatePresence>
+        {showEditModal && editingEvent && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 24 }}
+              style={{ width: '100%', maxWidth: '480px', background: '#0d1117', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '1.25rem', overflow: 'hidden' }}
+            >
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0 }}>Editar / Reprogramar Evento</h2>
+              </div>
+              <div style={{ padding: '1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <Music size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563' }} />
+                  <input type="text" placeholder="Nombre" className="input-field" style={{ paddingLeft: '2.6rem', width: '100%', boxSizing: 'border-box' }} value={editingEvent.name} onChange={e => setEditingEvent({ ...editingEvent, name: e.target.value })} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <MapPin size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563' }} />
+                    <input type="text" placeholder="Lugar" className="input-field" style={{ paddingLeft: '2.6rem', width: '100%', boxSizing: 'border-box' }} value={editingEvent.venue} onChange={e => setEditingEvent({ ...editingEvent, venue: e.target.value })} />
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563' }} />
+                    <input type="date" className="input-field" style={{ paddingLeft: '2.6rem', width: '100%', boxSizing: 'border-box' }} value={editingEvent.date} onChange={e => setEditingEvent({ ...editingEvent, date: e.target.value })} />
+                  </div>
+                </div>
+                
+                {(editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED') && (
+                  <div style={{ background: 'rgba(139,92,246,0.1)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(139,92,246,0.2)' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#a78bfa', margin: 0 }}>
+                      Este evento está {editingEvent.status === 'SUSPENDED' ? 'suspendido' : 'finalizado'}. Al guardar los cambios, se reactivará automáticamente para recibir votos.
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                  <button type="button" onClick={() => {
+                    const status = (editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED') ? 'PENDING' : editingEvent.status;
+                    // Actualizamos localmente primero para que handleUpdateEvent use el nuevo estado
+                    const updated = { ...editingEvent, status };
+                    setEditingEvent(updated);
+                    // Usamos la referencia directa para evitar problemas de estado asíncrono en el post
+                    events.update(updated.id, {
+                      name: updated.name,
+                      venue: updated.venue,
+                      event_date: updated.date,
+                      status: updated.status
+                    }).then(() => {
+                      showToast('Evento reactivado y actualizado');
+                      setShowEditModal(false);
+                      fetchEvents();
+                    }).catch(() => showToast('Error al actualizar', 'error'));
+                  }} 
+                  className="btn-primary" style={{ flex: 2 }}>
+                    {isProcessing ? 'Guardando...' : (editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED' ? 'Guardar y Reactivar' : 'Guardar Cambios')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
