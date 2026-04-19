@@ -643,6 +643,7 @@ const DJDashboard = () => {
                   const isLive = ev.status === 'ACTIVE';
                   const isFinished = ev.status === 'FINISHED';
                   const isPending = ev.status === 'PENDING';
+                  const isSuspended = ev.status === 'SUSPENDED';
 
                   const handleExportEvent = async (e: React.MouseEvent) => {
                     e.stopPropagation();
@@ -682,19 +683,35 @@ const DJDashboard = () => {
                         </div>
                         <span style={{
                           fontSize: '0.56rem', padding: '0.1rem 0.35rem', borderRadius: '9999px', fontWeight: '700', flexShrink: 0,
-                          background: isLive ? 'rgba(16,185,129,0.15)' : isPending ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)',
-                          color: isLive ? '#10b981' : isPending ? '#fbbf24' : '#64748b',
+                          background: isLive ? 'rgba(16,185,129,0.15)' : isPending ? 'rgba(251,191,36,0.15)' : isSuspended ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.06)',
+                          color: isLive ? '#10b981' : isPending ? '#fbbf24' : isSuspended ? '#fb923c' : '#64748b',
                           display: 'flex', alignItems: 'center', gap: '0.15rem',
                         }}>
-                          {isLive ? '● LIVE' : isPending ? <><Clock size={8} /> PREV</> : 'FIN'}
+                          {isLive ? '● LIVE' : isPending ? <><Clock size={8} /> PREV</> : isSuspended ? '⏸ SUSP' : 'FIN'}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.15rem', padding: '0.1rem 0.85rem 0.4rem' }}>
+                      <div style={{ display: 'flex', gap: '0.15rem', padding: '0.1rem 0.85rem 0.4rem', flexWrap: 'wrap' }}>
                         {isPending && (
                           <Tooltip tip="Lanzar evento ahora">
                             <button type="button" onClick={async (e) => { e.stopPropagation(); try { await events.launch(ev.id); showToast(`"${ev.name}" lanzado`, 'success'); fetchEvents(); } catch { showToast('Error', 'error'); } }}
                               style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', cursor: 'pointer', padding: '0.1rem 0.45rem', fontSize: '0.6rem', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.15rem', fontWeight: '700' }}>
                               <Zap size={9} /> Lanzar
+                            </button>
+                          </Tooltip>
+                        )}
+                        {isLive && (
+                          <Tooltip tip="Suspender evento temporalmente">
+                            <button type="button" onClick={async (e) => { e.stopPropagation(); try { await events.suspend(ev.id); showToast(`"${ev.name}" suspendido`, 'info'); fetchEvents(); } catch { showToast('Error', 'error'); } }}
+                              style={{ background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.25)', color: '#fb923c', cursor: 'pointer', padding: '0.1rem 0.45rem', fontSize: '0.6rem', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.15rem', fontWeight: '700' }}>
+                              <Power size={9} /> Suspender
+                            </button>
+                          </Tooltip>
+                        )}
+                        {(isFinished || isSuspended) && (
+                          <Tooltip tip="Reactivar evento">
+                            <button type="button" onClick={async (e) => { e.stopPropagation(); try { await events.launch(ev.id); showToast(`"${ev.name}" reactivado`, 'success'); fetchEvents(); } catch { showToast('Error', 'error'); } }}
+                              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', cursor: 'pointer', padding: '0.1rem 0.45rem', fontSize: '0.6rem', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.15rem', fontWeight: '700' }}>
+                              <Zap size={9} /> Reactivar
                             </button>
                           </Tooltip>
                         )}
@@ -1578,6 +1595,7 @@ const DJDashboard = () => {
         onClose={() => setShowQRModal(false)}
         url={publicUrl}
         onCopy={() => { navigator.clipboard.writeText(publicUrl); showToast('URL de Invitación copiada', 'success'); }}
+        activeDevices={activeDevices}
       />
 
       {/* ── TOAST ──────────────────────────────────────────── */}

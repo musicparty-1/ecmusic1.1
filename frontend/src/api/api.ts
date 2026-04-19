@@ -86,6 +86,7 @@ export const events = {
   getOne: (id: number) => api.get(`/events/${id}`),
   getStats: (id: number) => api.get(`/events/${id}/stats`),
   close: (id: number) => api.post(`/events/${id}/close`),
+  suspend: (id: number) => api.post(`/events/${id}/suspend`),
   toggleRecital: (id: number) => api.post(`/events/${id}/toggle-recital`),
   addSongs: (id: number, songs: { title: string; artist: string }[]) => api.post(`/events/${id}/songs`, { songs }),
   getTemplates: () => api.get('/event-templates'),

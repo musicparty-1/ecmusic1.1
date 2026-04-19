@@ -55,13 +55,13 @@ export class EventsService {
   async create(data: { name: string; venue: string; dj_id: number; template_id?: number; status?: string; event_date?: string }) {
     await this.planService.checkCanCreateEvent(data.dj_id);
 
-    const { template_id, status, ...eventData } = data;
+    const { template_id, status, event_date, ...eventData } = data;
 
     const event = await this.prisma.event.create({
       data: {
         ...eventData,
         status: status ?? 'ACTIVE',
-        event_date: data.event_date ? new Date(data.event_date) : new Date(),
+        startDate: event_date ? new Date(event_date) : new Date(),
         maxVotesPerDevice: 3
       },
     });
@@ -136,8 +136,9 @@ export class EventsService {
   }
 
   async updateEvent(id: number, data: { name?: string; venue?: string; event_date?: string; status?: string }) {
-    const updateData: any = { ...data };
-    if (data.event_date) updateData.event_date = new Date(data.event_date);
+    const { event_date, ...rest } = data;
+    const updateData: any = { ...rest };
+    if (event_date) updateData.startDate = new Date(event_date);
     
     const event = await this.prisma.event.update({
       where: { id },
@@ -314,5 +315,21 @@ export class EventsService {
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException('Evento no encontrado');
     return this.prisma.event.delete({ where: { id } });
+  }
+
+  async getAdminLogs(limit = 150) {
+    try {
+      const logs = await (this.prisma as any).eventLog.findMany({
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          event: { select: { name: true, venue: true } },
+          dj: { select: { email: true, name: true } },
+        },
+      });
+      return logs;
+    } catch {
+      return [];
+    }
   }
 }

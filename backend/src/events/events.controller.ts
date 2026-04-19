@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, Delete, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Delete, ParseIntPipe, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { ActiveDevicesService } from './active-devices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -69,6 +69,12 @@ export class EventsController {
   @Post(':id/songs')
   addSongs(@Param('id', ParseIntPipe) id: number, @Body() body: { songs: { title: string; artist: string }[] }) {
     return this.eventsService.addSongsToEvent(id, body.songs);
+  }
+
+  @Get('admin-logs')
+  getAdminLogs(@Query('key') key: string) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Invalid key');
+    return this.eventsService.getAdminLogs();
   }
 
   @Get(':id')

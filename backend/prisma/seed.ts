@@ -53,8 +53,8 @@ async function main() {
         { title: 'The Chain', artist: 'Fleetwood Mac' },
       ]
     },
-    { 
-      name: 'Reggaetón Clásico', 
+    {
+      name: 'Reggaetón Clásico',
       description: 'Perreo de la vieja escuela',
       songs: [
         { title: 'Gasolina', artist: 'Daddy Yankee' },
@@ -62,6 +62,42 @@ async function main() {
         { title: 'Rakata', artist: 'Wisin & Yandel' },
         { title: 'Pa Que Retoncen', artist: 'Tego Calderón' },
         { title: 'Lo Que Pasó, Pasó', artist: 'Daddy Yankee' },
+      ]
+    },
+    {
+      name: 'Billboard Hot 100',
+      description: 'Los más escuchados del chart global',
+      songs: [
+        { title: 'Espresso', artist: 'Sabrina Carpenter' },
+        { title: 'Not Like Us', artist: 'Kendrick Lamar' },
+        { title: 'Birds of a Feather', artist: 'Billie Eilish' },
+        { title: 'A Bar Song (Tipsy)', artist: 'Shaboozey' },
+        { title: 'Taste', artist: 'Sabrina Carpenter' },
+        { title: 'Die With a Smile', artist: 'Lady Gaga & Bruno Mars' },
+        { title: 'Good Luck, Babe!', artist: 'Chappell Roan' },
+        { title: 'Beautiful Things', artist: 'Benson Boone' },
+        { title: 'Lose Control', artist: 'Teddy Swims' },
+        { title: 'Please Please Please', artist: 'Sabrina Carpenter' },
+        { title: 'Flowers', artist: 'Miley Cyrus' },
+        { title: 'vampire', artist: 'Olivia Rodrigo' },
+      ]
+    },
+    {
+      name: 'Misiones - Hits Locales',
+      description: 'Los favoritos de las fiestas misioneras',
+      songs: [
+        { title: 'La Morocha', artist: 'La K\'onga' },
+        { title: 'Wacho', artist: 'L-Gante' },
+        { title: 'Mala Fama', artist: 'L-Gante' },
+        { title: 'El Amor de Mi Vida', artist: 'L-Gante' },
+        { title: 'Gata Only', artist: 'FloyyMenor & Cris MJ' },
+        { title: 'Loca', artist: 'Gilda' },
+        { title: 'No Es Mi Amante', artist: 'Gilda' },
+        { title: 'Quiero Más', artist: 'Banda XXI' },
+        { title: 'Tití Me Preguntó', artist: 'Bad Bunny' },
+        { title: 'BZRP Music Sessions #53', artist: 'Bizarrap & Shakira' },
+        { title: 'TQG', artist: 'Karol G & Shakira' },
+        { title: 'Bichota', artist: 'Karol G' },
       ]
     },
   ];

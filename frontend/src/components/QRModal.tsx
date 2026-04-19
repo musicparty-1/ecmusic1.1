@@ -8,10 +8,12 @@ interface QRModalProps {
   onClose: () => void;
   url: string;
   onCopy: () => void;
+  activeDevices?: number;
 }
 
-const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy }) => {
+const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy, activeDevices }) => {
   const qrRef = useRef<HTMLDivElement>(null);
+  const style = `@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.85)} }`;
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');
@@ -37,6 +39,8 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy }) => {
   };
 
   return (
+    <>
+    <style>{style}</style>
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -129,6 +133,27 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy }) => {
               >
                 <QRCodeSVG value={url} size={220} />
               </div>
+
+              {/* Active devices badge */}
+              {activeDevices !== undefined && activeDevices > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  background: 'rgba(16,185,129,0.1)',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  borderRadius: '9999px',
+                  padding: '0.35rem 0.9rem',
+                }}>
+                  <div style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: '#10b981',
+                    boxShadow: '0 0 6px #10b981',
+                    animation: 'pulse-dot 1.2s ease-in-out infinite',
+                  }} />
+                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#10b981' }}>
+                    {activeDevices} {activeDevices === 1 ? 'persona votando' : 'personas votando'} en vivo
+                  </span>
+                </div>
+              )}
 
               {/* URL */}
               <div style={{
@@ -234,6 +259,7 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy }) => {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 };
 

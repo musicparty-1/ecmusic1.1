@@ -4,11 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2, Users, Music, Zap, Activity, Globe,
   AlertTriangle, TrendingUp, LogOut, RefreshCw, Wifi,
-  UserCheck, Percent, AlertCircle, ScrollText, Trash2
+  UserCheck, Percent, AlertCircle, ScrollText
 } from 'lucide-react';
 import AdminLogin, { getAdminSession, clearAdminSession } from './AdminLogin';
-import { getActionLog, clearActionLog, ACTION_META } from '../../utils/actionLog';
-import type { ActionEntry } from '../../utils/actionLog';
+
 
 // ── Error boundary ─────────────────────────────────────────────────────────────
 class AdminErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -81,6 +80,15 @@ interface EventRow {
 interface VotePoint {
   time: string;
   count: number;
+}
+
+interface BackendLogEntry {
+  id: number;
+  action: string;
+  details: string | null;
+  created_at: string;
+  event: { name: string; venue: string } | null;
+  dj: { email: string; name: string | null } | null;
 }
 
 const POLL_MS = 15000;
@@ -167,7 +175,7 @@ function AdminDashboardContent({ session, onLogout }: {
 }) {
   const [stats, setStats] = useState<GlobalStats | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [actionLog, setActionLog] = useState<ActionEntry[]>([]);
+  const [backendLogs, setBackendLogs] = useState<BackendLogEntry[]>([]);
   const [voteHistory, setVoteHistory] = useState<VotePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -266,6 +274,13 @@ function AdminDashboardContent({ session, onLogout }: {
         return (order[a.status as keyof typeof order] ?? 2) - (order[b.status as keyof typeof order] ?? 2);
       }));
       setLastSync(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+
+      // Fetch backend event logs
+      try {
+        const ADMIN_KEY = 'mp-admin-secret-2024';
+        const logs = await apiFetch(`/events/admin-logs?key=${ADMIN_KEY}`);
+        if (Array.isArray(logs)) setBackendLogs(logs);
+      } catch { /* silently ignore */ }
     } catch (err) {
       console.error('Admin fetch error:', err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -279,11 +294,7 @@ function AdminDashboardContent({ session, onLogout }: {
 
   useEffect(() => {
     fetchAll();
-    setActionLog(getActionLog());
-    pollRef.current = setInterval(() => {
-      fetchAll(true);
-      setActionLog(getActionLog()); // refrescar log cada poll
-    }, POLL_MS);
+    pollRef.current = setInterval(() => fetchAll(true), POLL_MS);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -555,7 +566,7 @@ function AdminDashboardContent({ session, onLogout }: {
             </motion.div>
           </AnimatePresence>
 
-          {/* ── LOG DE ACCIONES ── */}
+          {/* ── LOG DE ACCIONES (backend) ── */}
           <div style={{ marginTop: '2rem' }}>
             <div style={{
               background: 'rgba(255,255,255,0.018)',
@@ -564,55 +575,60 @@ function AdminDashboardContent({ session, onLogout }: {
               overflow: 'hidden',
               boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
             }}>
-              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <ScrollText size={15} color="#a78bfa" />
-                  <span style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
-                    Log de Acciones del DJ
-                  </span>
-                  <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 9999, padding: '0.1rem 0.5rem' }}>
-                    {actionLog.length} entradas
-                  </span>
-                </div>
-                {actionLog.length > 0 && (
-                  <button onClick={() => { clearActionLog(); setActionLog([]); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: '0.68rem', fontFamily: 'inherit', padding: '0.2rem 0.5rem', borderRadius: 6, transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}>
-                    <Trash2 size={11} /> Limpiar
-                  </button>
-                )}
+              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <ScrollText size={15} color="#a78bfa" />
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
+                  Log de Acciones (Servidor)
+                </span>
+                <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 9999, padding: '0.1rem 0.5rem' }}>
+                  {backendLogs.length} entradas
+                </span>
               </div>
 
-              {actionLog.length === 0 ? (
+              {backendLogs.length === 0 ? (
                 <div style={{ padding: '2.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.82rem' }}>
-                  No hay acciones registradas aún. Las acciones del panel DJ aparecen aquí.
+                  No hay acciones registradas aún en el servidor.
                 </div>
               ) : (
                 <div style={{ maxHeight: 420, overflowY: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        {['Acción', 'Detalle', 'Fecha', 'Hora'].map(h => (
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, background: '#020614' }}>
+                        {['Acción', 'Evento', 'DJ', 'Detalle', 'Fecha', 'Hora'].map(h => (
                           <th key={h} style={{ padding: '0.55rem 1rem', textAlign: 'left', color: 'rgba(255,255,255,0.25)', fontWeight: '700', letterSpacing: '0.05em', fontSize: '0.62rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {actionLog.map(entry => {
-                        const meta = ACTION_META[entry.type];
-                        const date = new Date(entry.ts);
+                      {backendLogs.map(entry => {
+                        const actionMap: Record<string, { icon: string; color: string; label: string }> = {
+                          CREATE:  { icon: '🎉', color: '#22c55e', label: 'Evento creado' },
+                          LAUNCH:  { icon: '🚀', color: '#10b981', label: 'Evento lanzado' },
+                          FINISH:  { icon: '🔒', color: '#ef4444', label: 'Evento cerrado' },
+                          SUSPEND: { icon: '⏸', color: '#fb923c', label: 'Evento suspendido' },
+                          UPDATE:  { icon: '✏️', color: '#a78bfa', label: 'Evento editado' },
+                          DELETE:  { icon: '🗑️', color: '#f87171', label: 'Evento eliminado' },
+                        };
+                        const meta = actionMap[entry.action] ?? { icon: '📋', color: '#64748b', label: entry.action };
+                        const date = new Date(entry.created_at);
                         return (
                           <tr key={entry.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                             <td style={{ padding: '0.6rem 1rem', whiteSpace: 'nowrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span style={{ fontSize: '1rem' }}>{meta.icon}</span>
-                                <span style={{ fontWeight: '700', color: meta.color, fontSize: '0.75rem' }}>{entry.label}</span>
+                                <span style={{ fontSize: '0.9rem' }}>{meta.icon}</span>
+                                <span style={{ fontWeight: '700', color: meta.color, fontSize: '0.75rem' }}>{meta.label}</span>
                               </div>
                             </td>
-                            <td style={{ padding: '0.6rem 1rem', color: 'rgba(255,255,255,0.35)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {entry.detail ?? '—'}
+                            <td style={{ padding: '0.6rem 1rem', color: 'white', fontWeight: '600', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {entry.event?.name ?? '—'}
+                            </td>
+                            <td style={{ padding: '0.6rem 1rem', color: 'rgba(255,255,255,0.4)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {entry.dj?.name ?? entry.dj?.email ?? '—'}
+                            </td>
+                            <td style={{ padding: '0.6rem 1rem', color: 'rgba(255,255,255,0.3)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {entry.details ?? '—'}
                             </td>
                             <td style={{ padding: '0.6rem 1rem', color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                               {date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
