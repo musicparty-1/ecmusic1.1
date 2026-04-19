@@ -91,6 +91,18 @@ interface BackendLogEntry {
   dj: { email: string; name: string | null } | null;
 }
 
+interface DJActivity {
+  id: number;
+  name: string | null;
+  email: string;
+  createdAt: string | null;
+  totalEvents: number;
+  activeEvents: number;
+  lastEventDate: string | null;
+  lastEventName: string | null;
+  lastEventStatus: string | null;
+}
+
 const POLL_MS = 15000;
 
 // ── Mini sparkline ────────────────────────────────────────────────────────────
@@ -176,6 +188,7 @@ function AdminDashboardContent({ session, onLogout }: {
   const [stats, setStats] = useState<GlobalStats | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [backendLogs, setBackendLogs] = useState<BackendLogEntry[]>([]);
+  const [djActivity, setDjActivity] = useState<DJActivity[]>([]);
   const [voteHistory, setVoteHistory] = useState<VotePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -281,6 +294,13 @@ function AdminDashboardContent({ session, onLogout }: {
         const logs = await apiFetch(`/events/admin-logs?key=${ADMIN_KEY}`);
         if (Array.isArray(logs)) setBackendLogs(logs);
       } catch { /* silently ignore */ }
+
+      // Fetch DJ activity
+      try {
+        const ADMIN_KEY = 'mp-admin-secret-2024';
+        const djs = await apiFetch(`/events/admin-djs?key=${ADMIN_KEY}`);
+        if (Array.isArray(djs)) setDjActivity(djs);
+      } catch { /* silently ignore */ }
     } catch (err) {
       console.error('Admin fetch error:', err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -323,15 +343,9 @@ function AdminDashboardContent({ session, onLogout }: {
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #7c3aed 0%, #ec4899 50%, #06b6d4 100%)', opacity: 0.7 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '0.5rem',
-            background: 'linear-gradient(135deg,#7c3aed,#ec4899)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={14} color="white" fill="white" />
-          </div>
+          <img src="/logo.png" alt="EC Music" style={{ width: 28, height: 28, borderRadius: '0.5rem', objectFit: 'cover' }} />
           <span style={{ fontWeight: '900', fontSize: '0.9rem', letterSpacing: '-0.02em' }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
             <span style={{
               marginLeft: '0.5rem', fontSize: '0.6rem', fontWeight: '700',
               background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)',
@@ -639,6 +653,88 @@ function AdminDashboardContent({ session, onLogout }: {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── ACTIVIDAD DE DJs ── */}
+          <div style={{ marginTop: '2rem' }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.018)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '1.1rem',
+              overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Users size={15} color="#a78bfa" />
+                <span style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
+                  Actividad de DJs
+                </span>
+                <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 9999, padding: '0.1rem 0.5rem' }}>
+                  {djActivity.length} DJs
+                </span>
+              </div>
+              {djActivity.length === 0 ? (
+                <div style={{ padding: '2.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.82rem' }}>
+                  No hay DJs registrados aún.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        {['Estado', 'DJ', 'Email', 'Eventos', 'Activos', 'Último evento', 'Último uso', 'Registro'].map(h => (
+                          <th key={h} style={{ padding: '0.65rem 1rem', textAlign: 'left', color: 'rgba(255,255,255,0.25)', fontWeight: '700', letterSpacing: '0.05em', fontSize: '0.62rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {djActivity
+                        .sort((a, b) => {
+                          // Sort: active first, then by last event date desc
+                          if (b.activeEvents !== a.activeEvents) return b.activeEvents - a.activeEvents;
+                          return new Date(b.lastEventDate ?? 0).getTime() - new Date(a.lastEventDate ?? 0).getTime();
+                        })
+                        .map(dj => {
+                          const lastDate = dj.lastEventDate ? new Date(dj.lastEventDate) : null;
+                          const daysSince = lastDate ? Math.floor((Date.now() - lastDate.getTime()) / 86400000) : null;
+                          const activityColor = dj.activeEvents > 0 ? '#22c55e'
+                            : daysSince === null ? '#4b5563'
+                            : daysSince <= 30 ? '#fbbf24'
+                            : '#ef4444';
+                          const activityLabel = dj.activeEvents > 0 ? '🟢 EN VIVO'
+                            : daysSince === null ? '⬛ Sin eventos'
+                            : daysSince <= 7 ? '🟢 Esta semana'
+                            : daysSince <= 30 ? '🟡 Este mes'
+                            : daysSince <= 60 ? '🟠 +30 días'
+                            : '🔴 Inactivo';
+                          return (
+                            <tr key={dj.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: '800', padding: '0.15rem 0.55rem', borderRadius: 9999, background: `${activityColor}18`, color: activityColor, border: `1px solid ${activityColor}40` }}>
+                                  {activityLabel}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', fontWeight: '700', color: 'white', whiteSpace: 'nowrap' }}>{dj.name ?? '—'}</td>
+                              <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.4)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dj.email}</td>
+                              <td style={{ padding: '0.75rem 1rem', fontWeight: '900', color: '#8b5cf6', fontVariantNumeric: 'tabular-nums', textAlign: 'center' }}>{dj.totalEvents}</td>
+                              <td style={{ padding: '0.75rem 1rem', fontWeight: '900', color: dj.activeEvents > 0 ? '#22c55e' : 'rgba(255,255,255,0.2)', fontVariantNumeric: 'tabular-nums', textAlign: 'center' }}>{dj.activeEvents > 0 ? dj.activeEvents : '—'}</td>
+                              <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.5)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dj.lastEventName ?? '—'}</td>
+                              <td style={{ padding: '0.75rem 1rem', color: activityColor, fontWeight: '700', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                                {lastDate ? `${daysSince === 0 ? 'Hoy' : daysSince === 1 ? 'Ayer' : `hace ${daysSince}d`}` : '—'}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.25)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                                {dj.createdAt ? new Date(dj.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { events, songs as songsApi, votes } from '../../api/api';
 import { useDevice } from '../../hooks/useDevice';
-import { Search, ThumbsUp, Music, CheckCircle2, TrendingUp, TrendingDown, Minus, MapPin, Zap, Radio } from 'lucide-react';
+import { Search, ThumbsUp, Music, CheckCircle2, TrendingUp, TrendingDown, Minus, MapPin, Zap, Radio, Users } from 'lucide-react';
 
 interface FloatingEmoji { id: number; emoji: string; x: number; y: number; }
 const EMOJIS = ['❤️', '🔥', '🎵'];
@@ -56,6 +56,7 @@ const PublicVote = () => {
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [nowPlayingFlash, setNowPlayingFlash] = useState(false);
   const [voterCelebration, setVoterCelebration] = useState<Song | null>(null);
+  const [activeVoters, setActiveVoters] = useState(0);
   const prevNowPlayingId = useRef<number | null>(null);
   const prevRankRef = useRef<Record<number, number>>({});
 
@@ -143,7 +144,12 @@ const PublicVote = () => {
 
   useEffect(() => {
     if (!id || !deviceId) return;
-    const sendHeartbeat = () => events.heartbeat(parseInt(id), deviceId).catch(() => {});
+    const sendHeartbeat = async () => {
+      try {
+        const res = await events.heartbeat(parseInt(id), deviceId);
+        if (res.data?.count !== undefined) setActiveVoters(res.data.count);
+      } catch { /* */ }
+    };
     sendHeartbeat();
     const hb = setInterval(sendHeartbeat, 15000);
     return () => clearInterval(hb);
@@ -476,9 +482,10 @@ const PublicVote = () => {
           margin: '0 -1rem', padding: '0.85rem 1rem',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           marginBottom: '1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
           {/* Vinyl disc / now playing icon */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <motion.div
@@ -546,17 +553,34 @@ const PublicVote = () => {
             ))}
           </div>
         </div>
+
+        {/* ACTIVE VOTERS (INJECTION) */}
+        {activeVoters > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.35rem',
+            background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
+            borderRadius: '99px', padding: '0.3rem 0.65rem', flexShrink: 0
+          }}>
+            <Users size={12} color="#22c55e" />
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#22c55e', fontVariantNumeric: 'tabular-nums' }}>
+              {activeVoters}
+            </span>
+          </div>
+        )}
       </motion.div>
 
       <header style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>
-              {eventData?.isRecitalMode ? 'Votá el próximo tema' : 'Votá el próximo tema'}
-            </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              {eventData?.isRecitalMode ? 'El artista elige lo que sigue' : 'Tus votos deciden la noche'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img src="/logo.png" alt="Logo" style={{ width: 42, height: 42, borderRadius: '10px', objectFit: 'cover', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }} />
+            <div>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.02em', marginBottom: '0.1rem' }}>
+                {eventData?.isRecitalMode ? 'Votá el próximo tema' : 'Votá el próximo tema'}
+              </h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                {eventData?.isRecitalMode ? 'El artista elige lo que sigue' : 'Tus votos deciden la noche'}
+              </p>
+            </div>
           </div>
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', flexShrink: 0,

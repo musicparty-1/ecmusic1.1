@@ -60,20 +60,19 @@ const DJLogin = () => {
           {/* Logo */}
           <div style={{ marginBottom: '2.5rem' }}>
             <div style={{
-              width: 56, height: 56, borderRadius: '1rem',
-              background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 64, height: 64, borderRadius: '1rem',
               marginBottom: '1.25rem',
               boxShadow: '0 0 28px rgba(124,58,237,0.4)',
+              overflow: 'hidden'
             }}>
-              <Zap size={28} color="white" fill="white" />
+              <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <h1 style={{
               fontSize: '2rem', fontWeight: '800', margin: 0,
               letterSpacing: '-0.03em', lineHeight: 1.1,
             }}>
-              <span style={{ color: 'white' }}>Music</span>
-              <span style={{ color: '#8b5cf6' }}>Party</span>
+              <span style={{ color: 'white' }}>EC </span>
+              <span style={{ color: '#8b5cf6' }}>Music</span>
             </h1>
             <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '0.4rem' }}>
               La consola del DJ moderno
@@ -354,7 +353,7 @@ const DJLogin = () => {
 
           {/* Footer */}
           <p style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.72rem', color: '#374151' }}>
-            Powered by <span style={{ color: '#a78bfa', fontWeight: '700' }}>MusicParty</span>
+            Powered by <span style={{ color: '#a78bfa', fontWeight: '700' }}>EC Music</span>
             {' · '}
             <button type="button" onClick={() => navigate('/terms')}
               style={{ background: 'none', border: 'none', color: '#4b5563', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px' }}

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, Delete, ParseIntPipe, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Put, Patch, Body, Param, Get, Delete, ParseIntPipe, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { ActiveDevicesService } from './active-devices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -42,8 +42,15 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  @Patch(':id')
+  updatePut(@Param('id', ParseIntPipe) id: number, @Body() body: { name?: string; venue?: string; startDate?: string; status?: string }) {
+    return this.eventsService.updateEvent(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':id/update')
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: { name?: string; venue?: string; event_date?: string; status?: string }) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: { name?: string; venue?: string; startDate?: string; status?: string }) {
     return this.eventsService.updateEvent(id, body);
   }
 
@@ -69,6 +76,18 @@ export class EventsController {
   @Post(':id/songs')
   addSongs(@Param('id', ParseIntPipe) id: number, @Body() body: { songs: { title: string; artist: string }[] }) {
     return this.eventsService.addSongsToEvent(id, body.songs);
+  }
+
+  @Get('admin-all')
+  getAdminAllEvents(@Query('key') key: string) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Invalid key');
+    return this.eventsService.findAll();
+  }
+
+  @Get('admin-djs')
+  getAdminDJs(@Query('key') key: string) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Invalid key');
+    return this.eventsService.getDJActivity();
   }
 
   @Get('admin-logs')

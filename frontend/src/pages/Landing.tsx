@@ -100,6 +100,7 @@ const Landing = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          <img src="/logo.png" alt="Logo" style={{ width: 100, height: 100, borderRadius: '24px', marginBottom: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }} />
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             background: 'rgba(139,92,246,0.12)',

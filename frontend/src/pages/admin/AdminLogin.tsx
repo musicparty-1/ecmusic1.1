@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, Zap, ShieldCheck } from 'lucide-react';
 
 // Credenciales hardcodeadas — solo para uso interno
 const ADMIN_USERS: Record<string, { password: string; displayName: string; avatar: string }> = {
   enzul: {
-    password: 'musicparty2024',   // ← cambiá la password acá
+    password: 'musicparty2024',
     displayName: 'Enzo',
     avatar: '🎧',
   },
   diego: {
-    password: 'djdiego2024',      // ← cambiá la password acá
+    password: 'djdiego2024',
     displayName: 'Diego',
     avatar: '🎛️',
+  },
+  ecmusic: {
+    password: 'ec123456',
+    displayName: 'Master Admin',
+    avatar: '🛡️',
   },
 };
 
@@ -101,16 +106,14 @@ export default function AdminLogin({ onLogin }: Props) {
           pointerEvents: 'none',
         }} />
 
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
-            width: 60, height: 60, borderRadius: '1.2rem',
-            background: 'linear-gradient(135deg, #7c3aed, #8b5cf6, #ec4899)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 70, height: 70, borderRadius: '1.2rem',
             margin: '0 auto 1rem',
             boxShadow: '0 0 30px rgba(139,92,246,0.4)',
+            overflow: 'hidden'
           }}>
-            <ShieldCheck size={28} color="white" />
+            <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
             <Zap size={14} color="#8b5cf6" fill="#8b5cf6" />
@@ -119,7 +122,7 @@ export default function AdminLogin({ onLogin }: Props) {
             </span>
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: '900', letterSpacing: '-0.03em', color: 'white', margin: 0 }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', marginTop: '0.4rem' }}>
             Acceso restringido — Solo staff autorizado
@@ -246,7 +249,7 @@ export default function AdminLogin({ onLogin }: Props) {
         </form>
 
         <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.12)', fontSize: '0.7rem', marginTop: '1.5rem' }}>
-          Acceso solo para Enzo & Diego · MusicParty Staff
+          Acceso solo para Enzo & Diego · EC Music Staff
         </p>
       </motion.div>
 

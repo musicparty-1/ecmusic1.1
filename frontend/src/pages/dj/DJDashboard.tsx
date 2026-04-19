@@ -91,6 +91,10 @@ const DJDashboard = () => {
   const [newSong, setNewSong] = useState({ title: '', artist: '' });
   const [catalogSuggestions, setCatalogSuggestions] = useState<{ id: number; title: string; artist: string; genre: string }[]>([]);
   const [showCatalogDropdown, setShowCatalogDropdown] = useState(false);
+  const [catalogSource, setCatalogSource] = useState<'global' | 'template' | 'event'>('global');
+  const [selectedSourceId, setSelectedSourceId] = useState('');
+  const [sourceSongs, setSourceSongs] = useState<any[]>([]);
+  const [isLoadingSource, setIsLoadingSource] = useState(false);
   const [billingStatus, setBillingStatus] = useState<{ plan: string; subscriptionStatus: string; daysLeft: number } | null>(null);
   const [activeDevices, setActiveDevices] = useState<number>(0);
   const [albumArt, setAlbumArt] = useState<string | null>(null);
@@ -433,11 +437,11 @@ const DJDashboard = () => {
         background: 'rgba(8,6,18,0.97)',
         borderBottom: '1px solid rgba(139,92,246,0.12)',
         padding: '0 1.25rem',
-        height: '58px',
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
+        height: '68px',
+        display: 'flex', alignItems: 'center', gap: '0.9rem',
         position: 'sticky', top: 0, zIndex: 100, flexShrink: 0,
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 1px 20px rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(25px)',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.6)',
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.6), rgba(236,72,153,0.4), transparent)' }} />
         {/* Left: Back + Logo + event selector */}
@@ -453,14 +457,15 @@ const DJDashboard = () => {
             <ArrowLeft size={16} />
           </button>
           <div style={{
-            width: 26, height: 26, borderRadius: '0.45rem',
-            background: 'linear-gradient(135deg,#7c3aed,#8b5cf6)',
+            width: 32, height: 32, borderRadius: '0.6rem',
+            background: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden'
           }}>
-            <Zap size={14} color="white" fill="white" />
+            <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <span style={{ fontWeight: '800', fontSize: '0.85rem', letterSpacing: '-0.02em' }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+          <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.02em', color: 'white' }}>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
           </span>
           <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 0.15rem' }} />
           {selectedEvent ? (
@@ -475,10 +480,10 @@ const DJDashboard = () => {
               }}
             >
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontWeight: '700', fontSize: '0.8rem', lineHeight: 1.2 }}>{selectedEvent.name}</div>
-                <div style={{ fontSize: '0.58rem', color: '#64748b', lineHeight: 1 }}>{selectedEvent.venue}</div>
+                <div style={{ fontWeight: '800', fontSize: '1rem', lineHeight: 1.2, color: 'white' }}>{selectedEvent.name}</div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1, marginTop: '0.1rem' }}>{selectedEvent.venue}</div>
               </div>
-              <ChevronDown size={11} style={{ color: '#64748b', flexShrink: 0 }} />
+              <ChevronDown size={14} style={{ color: '#64748b', flexShrink: 0 }} />
             </button>
           ) : (
             <button
@@ -493,24 +498,24 @@ const DJDashboard = () => {
 
         {/* Center: timer + stats */}
         {selectedEvent?.status === 'ACTIVE' && (
-          <div className="dj-topbar-center" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', overflow: 'hidden' }}>
-            <span className="chip chip-cyan" style={{ fontFamily: '"Courier New", monospace', fontSize: '0.88rem', fontWeight: '800', letterSpacing: '0.1em', flexShrink: 0 }}>
+          <div className="dj-topbar-center" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', overflow: 'hidden' }}>
+            <span className="chip chip-cyan" style={{ fontFamily: '"Courier New", monospace', fontSize: '1.2rem', padding: '0.4rem 1rem', borderRadius: '0.75rem', fontWeight: '900', letterSpacing: '0.12em', flexShrink: 0, background: 'rgba(6,182,212,0.15)', border: '2px solid rgba(6,182,212,0.4)' }}>
               {formatElapsed(elapsed)}
             </span>
-            <div className="badge-live" style={{ flexShrink: 0 }}>
-              <div className="badge-live-dot" />
+            <div className="badge-live" style={{ flexShrink: 0, padding: '0.4rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.6rem' }}>
+              <div className="badge-live-dot" style={{ width: 8, height: 8 }} />
               EN VIVO
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
               {[
                 { label: 'VOTOS',   value: stats.totalVotes,    cls: 'chip-violet' },
                 { label: 'SONADAS', value: playedSongs.length,  cls: 'chip-green'  },
                 { label: 'ASIST',   value: stats.uniqueVoters,  cls: 'chip-amber'  },
                 { label: 'EN VIVO', value: activeDevices,       cls: 'chip-cyan'   },
               ].map(s => (
-                <div key={s.label} className={`chip ${s.cls}`}>
-                  <span style={{ fontWeight: '800' }}>{s.value}</span>
-                  <span style={{ opacity: 0.65, fontSize: '0.6rem', letterSpacing: '0.07em' }}>{s.label}</span>
+                <div key={s.label} className={`chip ${s.cls}`} style={{ padding: '0.4rem 0.9rem', borderRadius: '0.75rem' }}>
+                  <span style={{ fontWeight: '900', fontSize: '1.1rem' }}>{s.value}</span>
+                  <span style={{ opacity: 0.75, fontSize: '0.7rem', fontWeight: '700', letterSpacing: '0.05em' }}>{s.label}</span>
                 </div>
               ))}
             </div>
@@ -534,13 +539,13 @@ const DJDashboard = () => {
 
           <Tooltip tip="Pantalla para proyector">
             <button type="button" className="btn-pill" aria-label="Abrir Modo Espejo" onClick={() => window.open(mirrorUrl, '_blank')}
-              style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,0.3)', background: 'rgba(139,92,246,0.08)' }}>
-              <ExternalLink size={12} /> PROYECTAR
+              style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,0.3)', background: 'rgba(139,92,246,0.08)', padding: '0.6rem 1.2rem' }}>
+              <ExternalLink size={18} /> PROYECTAR
             </button>
           </Tooltip>
           <Tooltip tip="QR para que el público vote">
-            <button type="button" className="btn-pill" aria-label="Ver código QR del evento" onClick={() => setShowQRModal(true)}>
-              <QrCode size={12} /> VER QR
+            <button type="button" className="btn-pill" aria-label="Ver código QR del evento" onClick={() => setShowQRModal(true)} style={{ padding: '0.6rem 1.2rem' }}>
+              <QrCode size={18} /> VER QR
             </button>
           </Tooltip>
 
@@ -550,8 +555,8 @@ const DJDashboard = () => {
           {selectedEvent?.status === 'ACTIVE' && (
             <Tooltip tip="Finalizar el evento y generar resumen">
               <button type="button" className="btn-pill" onClick={() => setShowCloseConfirm(true)}
-                style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
-                <Power size={12} /> CERRAR EVENTO
+                style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)', padding: '0.6rem 1.2rem' }}>
+                <Power size={18} /> CERRAR EVENTO
               </button>
             </Tooltip>
           )}
@@ -563,18 +568,18 @@ const DJDashboard = () => {
             <button type="button" className="btn-pill"
               aria-label="Configuración del evento"
               onClick={() => { setShowSettingsPanel(!showSettingsPanel); setShowEventsPanel(false); }}
-              style={{ background: showSettingsPanel ? 'rgba(255,255,255,0.08)' : undefined, padding: '0.3rem 0.6rem' }}
+              style={{ background: showSettingsPanel ? 'rgba(255,255,255,0.08)' : undefined, padding: '0.6rem 0.8rem' }}
             >
-              <Settings size={13} />
+              <Settings size={20} />
             </button>
           </Tooltip>
           <Tooltip tip="Cerrar sesión">
             <button type="button" className="btn-pill"
               aria-label="Cerrar sesión"
               onClick={() => { localStorage.removeItem('dj_user'); navigate('/dj/login'); }}
-              style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)', padding: '0.3rem 0.6rem' }}
+              style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.25)', padding: '0.6rem 0.8rem' }}
             >
-              <LogOut size={13} />
+              <LogOut size={20} />
             </button>
           </Tooltip>
         </div>
@@ -917,25 +922,25 @@ const DJDashboard = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                             {/* Position */}
                             <div style={{
-                              width: 26, height: 26, borderRadius: '0.4rem', flexShrink: 0,
+                              width: 36, height: 36, borderRadius: '0.6rem', flexShrink: 0,
                               background: isTop ? `rgba(${index === 0 ? '245,158,11' : index === 1 ? '148,163,184' : '205,124,74'},0.15)` : 'rgba(255,255,255,0.04)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                               {isTop
-                                ? <span style={{ fontSize: '0.75rem', lineHeight: 1 }}>{medal!.emoji}</span>
-                                : <span style={{ fontSize: '0.62rem', fontWeight: '800', color: '#475569' }}>{index + 1}</span>}
+                                ? <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{medal!.emoji}</span>
+                                : <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#475569' }}>{index + 1}</span>}
                             </div>
 
                             {/* Song info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{
-                                fontSize: '0.82rem', fontWeight: index === 0 ? '700' : '600',
+                                fontSize: '1.05rem', fontWeight: index === 0 ? '800' : '700',
                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                 color: index === 0 ? '#fff' : '#cbd5e1',
                               }}>
                                 {song.title}
                               </div>
-                              <div style={{ fontSize: '0.64rem', color: '#475569', marginTop: '0.1rem' }}>
+                              <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.15rem', fontWeight: '500' }}>
                                 {song.artist}
                               </div>
                             </div>
@@ -943,9 +948,9 @@ const DJDashboard = () => {
                             {/* Votes */}
                             <Tooltip tip={song.votes > 0 ? `${song.votes} votos` : 'Sin votos aún'}>
                               <span style={{
-                                fontSize: '0.82rem', fontWeight: '800', flexShrink: 0,
-                                color: isTop ? medal!.color : '#374151',
-                                cursor: 'default',
+                                fontSize: '1.1rem', fontWeight: '900', flexShrink: 0,
+                                color: isTop ? medal!.color : '#475569',
+                                cursor: 'default', minWidth: '2.5rem', textAlign: 'right'
                               }}>
                                 {song.votes > 0 ? song.votes : '—'}
                               </span>
@@ -957,16 +962,16 @@ const DJDashboard = () => {
                                 type="button"
                                 onClick={() => handleMarkAsPlayed(song.id)}
                                 style={{
-                                  width: 26, height: 26, borderRadius: '0.4rem', flexShrink: 0,
-                                  background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+                                  width: 44, height: 44, borderRadius: '0.75rem', flexShrink: 0,
+                                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: 'pointer', color: '#22c55e', padding: 0,
                                   transition: 'all 0.15s',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.22)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.25)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.12)'; e.currentTarget.style.transform = 'scale(1)'; }}
                               >
-                                <Check size={14} strokeWidth={2.5} />
+                                <Check size={22} strokeWidth={3} />
                               </button>
                             </Tooltip>
                           </div>
@@ -1118,120 +1123,93 @@ const DJDashboard = () => {
             </div>
 
             {/* AGREGAR CANCIÓN */}
-            <div>
-              <div style={{...sectionLabel, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                AGREGAR CANCIÓN
+            <div style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: '1rem', padding: '1.1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.1em', color: '#a78bfa', textTransform: 'uppercase' }}>➕ Agregar Canción</span>
                 <button type="button" onClick={async () => {
                   try {
-                    const [catRes, genreRes] = await Promise.all([
-                      catalogApi.getAll(),
-                      catalogApi.getGenres(),
-                    ]);
-                    setFullCatalog(catRes.data);
-                    setCatalogGenres(genreRes.data);
-                    setCatalogGenreFilter('');
-                    setCatalogSearchTerm('');
+                    const [catRes, genreRes] = await Promise.all([catalogApi.getAll(), catalogApi.getGenres()]);
+                    setFullCatalog(catRes.data); setCatalogGenres(genreRes.data);
+                    setCatalogGenreFilter(''); setCatalogSearchTerm('');
                     setShowFullCatalogModal(true);
                   } catch { showToast('Error al cargar catálogo', 'error'); }
-                }} style={{
-                  background: 'transparent', border: 'none', color: '#8b5cf6',
-                  fontSize: '0.65rem', fontWeight: '700', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '0.2rem', padding: 0
-                }}>
-                  <List size={12} /> Ver catálogo completo
+                }} style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '0.5rem', color: '#a78bfa', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.65rem' }}>
+                  <List size={13} /> Catálogo
                 </button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    placeholder="Título / buscar catálogo"
-                    value={newSong.title}
+                  <input type="text" placeholder="Título / buscar catálogo" value={newSong.title}
                     onChange={(e) => handleCatalogSearch(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !showCatalogDropdown) handleAddSong(); if (e.key === 'Escape') setShowCatalogDropdown(false); }}
                     onBlur={(e) => { setTimeout(() => setShowCatalogDropdown(false), 150); e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)')}
-                    style={inputStyle}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)')}
+                    style={{ ...inputStyle, fontSize: '1rem', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}
                   />
                   {showCatalogDropdown && catalogSuggestions.length > 0 && (
-                    <div style={{
-                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-                      background: '#111827', border: '1px solid rgba(139,92,246,0.22)',
-                      borderRadius: '0.5rem', marginTop: '0.2rem', overflow: 'hidden',
-                      boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
-                    }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: '#111827', border: '1px solid rgba(139,92,246,0.22)', borderRadius: '0.6rem', marginTop: '0.25rem', overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }}>
                       {catalogSuggestions.map((s) => (
                         <div key={s.id} onMouseDown={() => selectCatalogSong(s)}
-                          style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                          style={{ padding: '0.65rem 1rem', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.12)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
-                          <div style={{ fontSize: '0.78rem', fontWeight: '600' }}>{s.title}</div>
-                          <div style={{ fontSize: '0.64rem', color: '#64748b' }}>{s.artist} · {s.genre}</div>
+                          <div style={{ fontSize: '0.88rem', fontWeight: '700' }}>{s.title}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem' }}>{s.artist} · {s.genre}</div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  <input
-                    type="text"
-                    placeholder="Artista"
-                    value={newSong.artist}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" placeholder="Artista" value={newSong.artist}
                     onChange={(e) => setNewSong({ ...newSong, artist: e.target.value })}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddSong(); }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)')}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)')}
                     onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-                    style={{ ...inputStyle, flex: 1, width: 'auto' }}
+                    style={{ ...inputStyle, flex: 1, width: 'auto', fontSize: '1rem', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}
                   />
                   <Tooltip tip="Agregar canción al setlist">
-                    <button
-                      type="button"
-                      onClick={handleAddSong}
-                      disabled={!newSong.title || !newSong.artist}
-                      style={{
-                        width: 36, height: 36, borderRadius: '0.5rem', flexShrink: 0,
-                        background: '#7c3aed',
-                        border: '1px solid #8b5cf6',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: (!newSong.title || !newSong.artist) ? 'not-allowed' : 'pointer',
-                        color: 'white', opacity: (!newSong.title || !newSong.artist) ? 0.4 : 1,
-                        padding: 0,
-                      }}
+                    <button type="button" onClick={handleAddSong} disabled={!newSong.title || !newSong.artist}
+                      style={{ width: 52, height: 52, borderRadius: '0.75rem', flexShrink: 0, background: 'linear-gradient(135deg,#7c3aed,#8b5cf6)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (!newSong.title || !newSong.artist) ? 'not-allowed' : 'pointer', color: 'white', opacity: (!newSong.title || !newSong.artist) ? 0.35 : 1, padding: 0, boxShadow: '0 4px 16px rgba(124,58,237,0.4)', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { if (newSong.title && newSong.artist) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                     >
-                      <Plus size={18} strokeWidth={2.5} />
+                      <Plus size={26} strokeWidth={2.5} />
                     </button>
                   </Tooltip>
                 </div>
               </div>
               <button type="button" onClick={openSongModal}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '0.63rem', marginTop: '0.5rem', padding: '0.2rem 0', fontFamily: 'inherit' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', marginTop: '0.75rem', padding: '0.2rem 0', fontFamily: 'inherit' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#94a3b8')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
               >
-                <List size={11} /> Gestionar lista completa
+                <List size={13} /> Gestionar lista completa
               </button>
             </div>
 
             {/* HISTORIAL DE LA NOCHE */}
             <div style={{ flex: 1 }}>
-              <div style={sectionLabel}>
-                HISTORIAL DE LA NOCHE ({playedSongs.length} REPRODUCIDAS)
+              <div style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.1em', color: '#64748b', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>🎵 Historial</span>
+                <span style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: '9999px', padding: '0.15rem 0.6rem', fontSize: '0.72rem', fontWeight: '800' }}>{playedSongs.length} sonadas</span>
               </div>
               {playedSongs.length === 0 ? (
-                <div style={{ color: '#374151', fontSize: '0.7rem', textAlign: 'center', padding: '1.5rem 0' }}>
+                <div style={{ color: '#374151', fontSize: '0.85rem', textAlign: 'center', padding: '2rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <Music size={28} style={{ opacity: 0.2 }} />
                   Todavía no sonó ninguna
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   {playedSongs.map((song, i) => (
-                    <div key={song.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.4rem', borderRadius: '0.4rem' }}>
-                      <span style={{ fontSize: '0.58rem', color: '#374151', fontWeight: '700', width: '16px', textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <div key={song.id} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.6rem 0.75rem', borderRadius: '0.65rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#4b5563', fontWeight: '800', width: '20px', textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.74rem', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#94a3b8' }}>{song.title}</div>
-                        <div style={{ fontSize: '0.6rem', color: '#374151' }}>{song.artist}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#94a3b8' }}>{song.title}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#4b5563', marginTop: '0.1rem' }}>{song.artist}</div>
                       </div>
-                      <Check size={10} style={{ color: '#10b981', flexShrink: 0, opacity: 0.5 }} />
+                      <Check size={16} style={{ color: '#10b981', flexShrink: 0, opacity: 0.7 }} />
                     </div>
                   ))}
                 </div>
@@ -1521,54 +1499,165 @@ const DJDashboard = () => {
               <div style={{ padding: '1.5rem 1.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <div>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff 40%, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CATÁLOGO COMPLETO</h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>Explorá y agregá desde la base de datos de MusicParty</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>Explorá y agregá desde la base de datos de EC Music</p>
                 </div>
                 <button type="button" aria-label="Cerrar" onClick={() => setShowFullCatalogModal(false)}
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.4rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
                   <X size={18} />
                 </button>
               </div>
-              {/* Buscador */}
-              <div style={{ padding: '1rem 1.75rem 0.5rem', flexShrink: 0 }}>
-                <input type="text" placeholder="Buscar canción o artista..." className="input-field" style={{ width: '100%' }} value={catalogSearchTerm}
-                  onChange={(e) => setCatalogSearchTerm(e.target.value)}
-                />
-              </div>
-              {/* Filtro de género — dropdown */}
-              <div style={{ padding: '0.5rem 1.75rem 0.75rem', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <select
-                  title="Filtrar por género"
-                  value={catalogGenreFilter}
-                  onChange={e => setCatalogGenreFilter(e.target.value)}
+              {/* SELECTOR DE FUENTE */}
+              <div style={{ padding: '0.75rem 1.75rem', display: 'flex', gap: '0.65rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <button
+                  type="button"
+                  onClick={() => { setCatalogSource('global'); setCatalogSearchTerm(''); setCatalogGenreFilter(''); }}
                   style={{
-                    width: '100%', background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem',
-                    padding: '0.55rem 0.85rem', color: catalogGenreFilter ? '#a78bfa' : 'rgba(255,255,255,0.45)',
-                    fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer',
-                    outline: 'none', fontFamily: 'inherit', appearance: 'none',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center',
+                    flex: 1, padding: '0.65rem 0', borderRadius: '0.75rem', fontSize: '0.75rem', fontWeight: '700',
+                    background: catalogSource === 'global' ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: catalogSource === 'global' ? '#a78bfa' : '#64748b',
+                    border: `1px solid ${catalogSource === 'global' ? 'rgba(139,92,246,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
-                  <option value="" style={{ background: '#0d1117', color: '#e2e8f0' }}>Todos los géneros</option>
-                  {catalogGenres.map(g => (
-                    <option key={g.genre} value={g.genre} style={{ background: '#0d1117', color: '#e2e8f0' }}>{g.genre} ({g.count})</option>
-                  ))}
-                </select>
+                  Catálogo Global
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setCatalogSource('template'); setSelectedSourceId(''); setSourceSongs([]); }}
+                  style={{
+                    flex: 1, padding: '0.65rem 0', borderRadius: '0.75rem', fontSize: '0.75rem', fontWeight: '700',
+                    background: catalogSource === 'template' ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: catalogSource === 'template' ? '#a78bfa' : '#64748b',
+                    border: `1px solid ${catalogSource === 'template' ? 'rgba(139,92,246,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
+                  Playlists
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setCatalogSource('event'); setSelectedSourceId(''); setSourceSongs([]); }}
+                  style={{
+                    flex: 1, padding: '0.65rem 0', borderRadius: '0.75rem', fontSize: '0.75rem', fontWeight: '700',
+                    background: catalogSource === 'event' ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: catalogSource === 'event' ? '#a78bfa' : '#64748b',
+                    border: `1px solid ${catalogSource === 'event' ? 'rgba(139,92,246,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                    cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
+                  Otros Eventos
+                </button>
               </div>
-              {/* Lista — solo aparece con búsqueda o género seleccionado */}
-              <div style={{ overflowY: 'auto', flex: 1 }}>
-                {!catalogSearchTerm && !catalogGenreFilter ? (
-                  <div style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🎵</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>Buscá una canción o elegí un género</div>
+
+              {/* CONTROLES DINÁMICOS SEGÚN FUENTE */}
+              <div style={{ padding: '1rem 1.75rem 0.75rem', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {catalogSource === 'global' ? (
+                  <>
+                    <input type="text" placeholder="Buscar canción o artista..." className="input-field" style={{ width: '100%' }} value={catalogSearchTerm}
+                      onChange={(e) => setCatalogSearchTerm(e.target.value)}
+                    />
+                    <div style={{ position: 'relative' }}>
+                      <select
+                        title="Filtrar por género"
+                        value={catalogGenreFilter}
+                        onChange={e => setCatalogGenreFilter(e.target.value)}
+                        style={{
+                          width: '100%', background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem',
+                          padding: '0.55rem 0.85rem', color: catalogGenreFilter ? '#a78bfa' : 'rgba(255,255,255,0.45)',
+                          fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer',
+                          outline: 'none', fontFamily: 'inherit', appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center',
+                        }}
+                      >
+                        <option value="" style={{ background: '#0d1117', color: '#e2e8f0' }}>Todos los géneros</option>
+                        {catalogGenres.map(g => (
+                          <option key={g.genre} value={g.genre} style={{ background: '#0d1117', color: '#e2e8f0' }}>{g.genre} ({g.count})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : catalogSource === 'template' ? (
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      title="Seleccionar Playlist"
+                      value={selectedSourceId}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setSelectedSourceId(val);
+                        if (!val) { setSourceSongs([]); return; }
+                        setIsLoadingSource(true);
+                        try {
+                          const t = templates.find(temp => String(temp.id) === val);
+                          // En nuestro backend, las plantillas ya incluyen canciones si se pidió getAll o si se busca el detalle
+                          setSourceSongs(t?.songs || []);
+                        } catch { showToast('Error al cargar playlist', 'error'); }
+                        setIsLoadingSource(false);
+                      }}
+                      style={{
+                        width: '100%', background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem',
+                        padding: '0.55rem 0.85rem', color: selectedSourceId ? '#a78bfa' : 'rgba(255,255,255,0.45)',
+                        fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer',
+                        outline: 'none', fontFamily: 'inherit', appearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center',
+                      }}
+                    >
+                      <option value="" style={{ background: '#0d1117', color: '#64748b' }}>Seleccionar Playlist...</option>
+                      {templates.map(t => (
+                        <option key={t.id} value={String(t.id)} style={{ background: '#0d1117', color: '#e2e8f0' }}>{t.name}</option>
+                      ))}
+                    </select>
                   </div>
+                ) : (
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      title="Seleccionar Evento Pasado"
+                      value={selectedSourceId}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setSelectedSourceId(val);
+                        if (!val) { setSourceSongs([]); return; }
+                        setIsLoadingSource(true);
+                        try {
+                          const res = await songsApi.getByEvent(parseInt(val));
+                          setSourceSongs(res.data);
+                        } catch { showToast('Error al cargar evento', 'error'); }
+                        setIsLoadingSource(false);
+                      }}
+                      style={{
+                        width: '100%', background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem',
+                        padding: '0.55rem 0.85rem', color: selectedSourceId ? '#a78bfa' : 'rgba(255,255,255,0.45)',
+                        fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer',
+                        outline: 'none', fontFamily: 'inherit', appearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center',
+                      }}
+                    >
+                      <option value="" style={{ background: '#0d1117', color: '#64748b' }}>Seleccionar Evento Pasado...</option>
+                      {myEvents.filter(e => e.id !== selectedEventId).map(e => (
+                        <option key={e.id} value={String(e.id)} style={{ background: '#0d1117', color: '#e2e8f0' }}>{e.name} — {e.venue}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Lista Dinámica */}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {isLoadingSource ? (
+                  <div style={{ textAlign: 'center', padding: '3rem' }}><SkeletonLoader /></div>
                 ) : (() => {
-                  const filtered = fullCatalog.filter(s => {
-                    const matchGenre = !catalogGenreFilter || s.genre === catalogGenreFilter;
-                    const matchSearch = !catalogSearchTerm || (s.title + ' ' + s.artist).toLowerCase().includes(catalogSearchTerm.toLowerCase());
+                  const displaySongs = catalogSource === 'global' ? fullCatalog : sourceSongs;
+                  const filtered = displaySongs.filter(s => {
+                    const matchGenre = catalogSource !== 'global' || !catalogGenreFilter || s.genre === catalogGenreFilter;
+                    const matchSearch = catalogSource !== 'global' || !catalogSearchTerm || (s.title + ' ' + s.artist).toLowerCase().includes(catalogSearchTerm.toLowerCase());
                     return matchGenre && matchSearch;
                   });
+
                   if (filtered.length === 0) return (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No se encontraron resultados.</div>
                   );

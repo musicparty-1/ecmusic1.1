@@ -24,6 +24,43 @@ export class EventsService {
     }
   }
 
+  async findAll() {
+    return this.prisma.event.findMany({
+      orderBy: { created_at: 'desc' },
+      include: {
+        dj: { select: { id: true, email: true, name: true } },
+        _count: { select: { songs: true } },
+      },
+    });
+  }
+
+  async getDJActivity() {
+    const djs = await this.prisma.dJUser.findMany({
+      include: {
+        events: {
+          orderBy: { created_at: 'desc' },
+          include: { _count: { select: { songs: true } } },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return djs.map((dj) => {
+      const lastEvent = dj.events[0] ?? null;
+      return {
+        id: dj.id,
+        name: dj.name ?? null,
+        email: dj.email,
+        createdAt: dj.created_at ?? null,
+        totalEvents: dj.events.length,
+        activeEvents: dj.events.filter((e) => e.status === 'ACTIVE').length,
+        lastEventDate: lastEvent?.created_at ?? null,
+        lastEventName: lastEvent?.name ?? null,
+        lastEventStatus: lastEvent?.status ?? null,
+      };
+    });
+  }
+
   async findAllByDJ(djId: number) {
     const events = await this.prisma.event.findMany({
       where: { dj_id: djId },
@@ -135,10 +172,12 @@ export class EventsService {
     return event;
   }
 
-  async updateEvent(id: number, data: { name?: string; venue?: string; event_date?: string; status?: string }) {
-    const { event_date, ...rest } = data;
+  async updateEvent(id: number, data: { name?: string; venue?: string; event_date?: string; startDate?: string; status?: string; logoUrl?: string }) {
+    const { event_date, startDate, ...rest } = data;
     const updateData: any = { ...rest };
-    if (event_date) updateData.startDate = new Date(event_date);
+    
+    const dateToUse = startDate || event_date;
+    if (dateToUse) updateData.startDate = new Date(dateToUse);
     
     const event = await this.prisma.event.update({
       where: { id },

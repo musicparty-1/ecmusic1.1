@@ -96,6 +96,7 @@ export const events = {
   getExport: (id: number) => api.get(`/events/${id}/export`),
   heartbeat: (id: number, deviceId: string) => api.post(`/events/${id}/heartbeat`, { device_id: deviceId }),
   getActiveDevices: (id: number) => api.get(`/events/${id}/active-devices`),
+  update: (id: number, data: any) => api.put(`/events/${id}`, data),
 };
 
 export const songs = {

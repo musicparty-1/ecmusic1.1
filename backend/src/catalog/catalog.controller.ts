@@ -16,4 +16,9 @@ export class CatalogController {
   getAll() {
     return this.catalogService.getAll();
   }
+
+  @Get('genres')
+  getGenres() {
+    return this.catalogService.getGenres();
+  }
 }

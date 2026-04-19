@@ -70,7 +70,7 @@ const SECTIONS = [
       },
       {
         q: '¿Qué es la app móvil?',
-        a: `La <strong>app nativa de Android</strong> (MusicParty) ofrece una experiencia mejorada para el público: búsqueda de canciones, trending de posiciones, "ahora suena", y vibración al votar. Se instala desde el archivo APK. El link web también funciona perfectamente sin instalar nada.`,
+        a: `La <strong>app nativa de Android</strong> (EC Music) ofrece una experiencia mejorada para el público: búsqueda de canciones, trending de posiciones, "ahora suena", y vibración al votar. Se instala desde el archivo APK. El link web también funciona perfectamente sin instalar nada.`,
       },
       {
         q: '¿Cómo funciona el anti-fraude?',
@@ -162,7 +162,7 @@ const SECTIONS = [
     items: [
       {
         q: '¿Cómo instalo la app en Android?',
-        a: `La app se distribuye como APK (instalación directa, fuera del Play Store por ahora):\n\n1. Descargá el archivo <strong>musicparty.apk</strong>\n2. En el celular, habilitá "Instalar desde fuentes desconocidas" en Ajustes → Seguridad\n3. Abrí el APK descargado y seguí los pasos de instalación\n4. Abrí la app, ingresá el código del evento (el número del link) y listo\n\nEl proceso lleva menos de 2 minutos.`,
+        a: `La app se distribuye como APK (instalación directa, fuera del Play Store por ahora):\n\n1. Descargá el archivo <strong>EC Music.apk</strong>\n2. En el celular, habilitá "Instalar desde fuentes desconocidas" en Ajustes → Seguridad\n3. Abrí el APK descargado y seguí los pasos de instalación\n4. Abrí la app, ingresá el código del evento (el número del link) y listo\n\nEl proceso lleva menos de 2 minutos.`,
       },
       {
         q: '¿Qué ventajas tiene la app vs el link web?',
@@ -248,7 +248,7 @@ const HelpPage = () => {
             </div>
             <div>
               <h1 style={{ fontSize: '1.9rem', fontWeight: '900', margin: 0, letterSpacing: '-0.03em' }}>Manual de uso</h1>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', margin: 0 }}>MusicParty — Guía completa para DJs</p>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', margin: 0 }}>EC Music — Guía completa para DJs</p>
             </div>
           </div>
         </div>

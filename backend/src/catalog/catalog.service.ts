@@ -24,4 +24,17 @@ export class CatalogService {
       orderBy: { title: 'asc' },
     });
   }
+
+  async getGenres() {
+    const genres = await this.prisma.catalogSong.groupBy({
+      by: ['genre'],
+      _count: {
+        _all: true,
+      },
+    });
+    return genres.map(g => ({
+      genre: g.genre || 'General',
+      count: g._count._all,
+    }));
+  }
 }

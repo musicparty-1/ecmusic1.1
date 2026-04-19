@@ -258,7 +258,7 @@ const BillingPage = () => {
             {isExpired || isCancelled ? '⚠️ Activá tu cuenta' : '✨ Planes y precios'}
           </h1>
           <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-            Elegí cómo querés usar MusicParty: suscripción mensual o créditos por evento.
+            Elegí cómo querés usar EC Music: suscripción mensual o créditos por evento.
           </p>
         </div>
 

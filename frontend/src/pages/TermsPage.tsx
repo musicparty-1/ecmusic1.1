@@ -12,11 +12,9 @@ export default function TermsPage() {
           <ArrowLeft size={16} /> Volver
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: 26, height: 26, borderRadius: '0.45rem', background: 'linear-gradient(135deg, #6d28d9, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={13} color="white" fill="white" />
-          </div>
+          <img src="/logo.png" alt="Logo" style={{ width: 26, height: 26, borderRadius: '0.45rem', objectFit: 'cover' }} />
           <span style={{ fontWeight: '900', fontSize: '0.88rem', letterSpacing: '-0.02em' }}>
-            Music<span style={{ color: '#8b5cf6' }}>Party</span>
+            EC <span style={{ color: '#8b5cf6' }}>Music</span>
             <span style={{ marginLeft: '0.5rem', fontSize: '0.6rem', fontWeight: '700', background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)', borderRadius: 4, padding: '0.1rem 0.4rem', color: '#a78bfa', letterSpacing: '0.1em' }}>TÉRMINOS</span>
           </span>
         </div>
@@ -81,13 +79,13 @@ export default function TermsPage() {
               {section.title}
             </h2>
             <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-              {section.body}
+              {section.body.replace(/MusicParty/g, 'EC Music')}
             </div>
           </section>
         ))}
 
         <div style={{ marginTop: '3rem', padding: '1.25rem 1.5rem', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '1rem', fontSize: '0.82rem', color: '#64748b', lineHeight: 1.7 }}>
-          Al registrarse o usar MusicParty, usted confirma que ha leído, entendido y aceptado estos Términos de Uso en su totalidad.
+          Al registrarse o usar EC Music, usted confirma que ha leído, entendido y aceptado estos Términos de Uso en su totalidad.
         </div>
       </div>
     </div>

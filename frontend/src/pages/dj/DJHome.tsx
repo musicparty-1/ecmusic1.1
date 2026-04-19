@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api, { events, billing as billingApi } from '../../api/api';
 import {
   Search, Radio,
-  FileText, Download, LogOut, Zap, Copy, HelpCircle,
-  Music2, MapPin, Play, XCircle, Trash2, Image, Clock,
+  FileText, Download, LogOut, Zap, Copy, HelpCircle, List,
+  Music2, MapPin, Play, XCircle, Trash2, Image, Clock, Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Tooltip from '../../components/Tooltip';
@@ -32,6 +32,8 @@ const DJHome = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [billingStatus, setBillingStatus] = useState<{ plan: string; subscriptionStatus: string; daysLeft: number } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
 
   const navigate = useNavigate();
   const djUser = JSON.parse(localStorage.getItem('dj_user') || '{}');
@@ -155,6 +157,27 @@ const DJHome = () => {
       setConfirmDeleteId(null);
       fetchEvents();
     } catch { showToast('Error al eliminar evento', 'error'); }
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editingEvent) return;
+    try {
+      setIsProcessing(true);
+      await events.update(editingEvent.id, {
+        name: editingEvent.name,
+        venue: editingEvent.venue,
+        event_date: editingEvent.startDate,
+        status: editingEvent.status
+      });
+      showToast('Evento actualizado');
+      setShowEditModal(false);
+      fetchEvents();
+    } catch (err) {
+      console.error(err);
+      showToast('Error al actualizar', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const liveEvents = myEvents.filter(e => e.status === 'ACTIVE' || e.status === 'PENDING');
@@ -403,6 +426,20 @@ const DJHome = () => {
                       {/* Secondary actions */}
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
                         {/* Cerrar evento */}
+                        <Tooltip tip="Editar / Reprogramar">
+                          <button type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingEvent({ ...ev, startDate: ev.startDate?.split('T')[0] || '' });
+                              setShowEditModal(true);
+                            }}
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--text-muted)', borderRadius: '8px', padding: '0.3rem 0.55rem', cursor: 'pointer', fontSize: '0.65rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', fontFamily: 'inherit', transition: 'all 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#a78bfa'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(167,139,250,0.3)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                        </Tooltip>
                         <Tooltip tip="Finalizar el evento">
                           <button type="button"
                             onClick={(e) => handleClose(ev, e)}
@@ -587,17 +624,17 @@ const DJHome = () => {
                 textAlign: 'center',
               }}>
                 <div style={{
-                  width: 52, height: 52, borderRadius: '0.875rem',
-                  background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+                  width: 56, height: 56, borderRadius: '1rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   margin: '0 auto 1rem',
                   boxShadow: '0 0 20px rgba(124,58,237,0.4)',
+                  overflow: 'hidden'
                 }}>
-                  <Zap size={24} color="white" fill="white" />
+                  <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>
-                  <span style={{ color: 'white' }}>Music</span>
-                  <span style={{ color: '#8b5cf6' }}>Party</span>
+                  <span style={{ color: 'white' }}>EC </span>
+                  <span style={{ color: '#8b5cf6' }}>Music</span>
                 </h2>
                 <p style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.3rem' }}>Iniciá tu evento en segundos</p>
               </div>
@@ -655,60 +692,73 @@ const DJHome = () => {
                   />
                 </div>
 
-                {/* Templates */}
+                {/* Templates Dropdown */}
                 {templates.length > 0 && (
                   <div>
-                    <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.1em', color: '#64748b', marginBottom: '0.65rem', textTransform: 'uppercase' }}>Playlist inicial</p>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      {['', ...templates.map(t => String(t.id))].map((tid, idx) => {
-                        const isActive = newEvent.template_id === tid;
-                        return (
-                          <button key={idx} type="button"
-                            onClick={() => setNewEvent({ ...newEvent, template_id: tid })}
-                            style={{
-                              padding: '0.3rem 0.85rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600',
-                              border: `1px solid ${isActive ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`,
-                              background: isActive ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-                              color: isActive ? '#8b5cf6' : '#64748b', cursor: 'pointer', fontFamily: 'inherit',
-                            }}
-                          >
-                            {tid === '' ? 'Vacía' : templates.find(t => String(t.id) === tid)?.name}
-                          </button>
-                        );
-                      })}
+                    <p style={{ fontSize: '0.62rem', fontWeight: '800', letterSpacing: '0.1em', color: '#64748b', marginBottom: '0.6rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <List size={12} /> Seleccionar Playlist Inicial
+                    </p>
+                    <div style={{ position: 'relative' }}>
+                      <select
+                        title="Seleccionar plantilla de canciones"
+                        value={newEvent.template_id}
+                        onChange={e => setNewEvent({ ...newEvent, template_id: e.target.value })}
+                        style={{
+                          width: '100%', boxSizing: 'border-box',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${newEvent.template_id ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                          borderRadius: '0.75rem', color: newEvent.template_id ? '#fff' : 'rgba(255,255,255,0.3)',
+                          fontSize: '0.85rem', fontWeight: '600', padding: '0.8rem 1rem',
+                          outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <option value="" style={{ background: '#0d1117', color: '#64748b' }}>Sin playlist (evento vacío)</option>
+                        {templates.map(t => (
+                          <option key={t.id} value={String(t.id)} style={{ background: '#0d1117', color: '#e2e8f0' }}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 )}
 
                 {/* Copiar set de otro evento */}
-                {myEvents.filter(e => e.status !== 'PENDING').length > 0 && (
+                {myEvents.length > 0 && (
                   <div>
-                    <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.1em', color: '#64748b', marginBottom: '0.55rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Copy size={11} /> Copiar canciones de otro evento (opcional)
+                    <p style={{ fontSize: '0.62rem', fontWeight: '800', letterSpacing: '0.1em', color: '#a78bfa', marginBottom: '0.6rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Copy size={12} /> Copiar setlist de evento anterior
                     </p>
-                    <select
-                      title="Copiar set de canciones"
-                      value={newEvent.copyFromEventId}
-                      onChange={e => setNewEvent({ ...newEvent, copyFromEventId: e.target.value })}
-                      style={{
-                        width: '100%', boxSizing: 'border-box',
-                        background: newEvent.copyFromEventId ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${newEvent.copyFromEventId ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                        borderRadius: '0.75rem', color: newEvent.copyFromEventId ? '#a78bfa' : 'rgba(255,255,255,0.35)',
-                        fontSize: '0.85rem', fontWeight: '500', padding: '0.75rem 1rem',
-                        outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
-                        appearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center',
-                      }}
-                    >
-                      <option value="" style={{ background: '#0d1117', color: '#94a3b8' }}>Sin copiar</option>
-                      {myEvents.filter(e => e.status !== 'PENDING').map(e => (
-                        <option key={e.id} value={String(e.id)} style={{ background: '#0d1117', color: '#e2e8f0' }}>
-                          {e.name} · {e.venue} {e._count?.songs ? `(${e._count.songs} canciones)` : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <div style={{ position: 'relative' }}>
+                      <select
+                        title="Copiar canciones de un evento pasado"
+                        value={newEvent.copyFromEventId}
+                        onChange={e => setNewEvent({ ...newEvent, copyFromEventId: e.target.value })}
+                        style={{
+                          width: '100%', boxSizing: 'border-box',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${newEvent.copyFromEventId ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                          borderRadius: '0.75rem', color: newEvent.copyFromEventId ? '#fff' : 'rgba(255,255,255,0.3)',
+                          fontSize: '0.85rem', fontWeight: '600', padding: '0.8rem 1rem',
+                          outline: 'none', fontFamily: 'inherit', cursor: 'pointer',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <option value="" style={{ background: '#0d1117', color: '#64748b' }}>No copiar (set vacío)</option>
+                        {myEvents.map(e => (
+                          <option key={e.id} value={String(e.id)} style={{ background: '#0d1117', color: '#e2e8f0' }}>
+                            {e.name} — {e.venue} {e._count?.songs ? `(${e._count.songs} temas)` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
 
@@ -786,6 +836,68 @@ const DJHome = () => {
       </AnimatePresence>
 
       {/* ── TOAST ────────────────────────────────────── */}
+
+      {/* ── EDIT MODAL (INJECTION) ─────────────────── */}
+      <AnimatePresence>
+        {showEditModal && editingEvent && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 24 }}
+              style={{ width: '100%', maxWidth: '480px', background: '#0d1117', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '1.25rem', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+            >
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: 'white' }}>Editar / Reprogramar Evento</h2>
+              </div>
+              <div style={{ padding: '1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                   <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'block' }}>Nombre de la fiesta</label>
+                   <input type="text" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box' }} value={editingEvent.name} onChange={e => setEditingEvent({ ...editingEvent, name: e.target.value })} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'block' }}>Lugar</label>
+                    <input type="text" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box' }} value={editingEvent.venue} onChange={e => setEditingEvent({ ...editingEvent, venue: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'block' }}>Fecha</label>
+                    <input type="date" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box' }} value={editingEvent.startDate} onChange={e => setEditingEvent({ ...editingEvent, startDate: e.target.value })} />
+                  </div>
+                </div>
+                
+                {(editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED') && (
+                  <div style={{ background: 'rgba(139,92,246,0.1)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(139,92,246,0.2)' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#a78bfa', margin: 0 }}>
+                      Este evento está {editingEvent.status === 'SUSPENDED' ? 'suspendido' : 'finalizado'}. Al guardar, se reactivará automáticamente.
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <button type="button" onClick={() => setShowEditModal(false)} className="edit-btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                  <button type="button" 
+                    onClick={() => {
+                      const status = (editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED') ? 'PENDING' : editingEvent.status;
+                      setEditingEvent({ ...editingEvent, status });
+                      setTimeout(handleUpdateEvent, 0);
+                    }}
+                    className="edit-btn-primary" style={{ flex: 2 }}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'Guardando...' : (editingEvent.status === 'SUSPENDED' || editingEvent.status === 'FINISHED' ? 'Guardar y Reactivar' : 'Guardar Cambios')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TOAST ────────────────────────────────────── */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -808,6 +920,10 @@ const DJHome = () => {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         body { background: #000; }
+        .edit-input-field { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.6rem; color: white; padding: 0.65rem 0.8rem; font-size: 0.85rem; transition: border-color 0.2s; font-family: inherit; }
+        .edit-input-field:focus { outline: none; border-color: #8b5cf6; background: rgba(139,92,246,0.05); }
+        .edit-btn-primary { background: #7c3aed; color: white; border: none; border-radius: 0.6rem; padding: 0.7rem 1.4rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .edit-btn-secondary { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.6rem; padding: 0.7rem 1.4rem; font-weight: 700; cursor: pointer; font-family: inherit; }
       `}</style>
     </div>
   );
