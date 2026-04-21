@@ -72,7 +72,7 @@ export class BillingService {
       const mpPlan = new PreApprovalPlan(this.mp);
       const created = await mpPlan.create({
         body: {
-          reason: `MusicParty ${planName}`,
+          reason: `EC Music ${planName}`,
           auto_recurring: {
             frequency: 1,
             frequency_type: 'months',
@@ -93,7 +93,7 @@ export class BillingService {
         preapproval_plan_id: planId,
         payer_email: dj.email,
         back_url: `${process.env.FRONTEND_URL}/dj/billing?status=success`,
-        reason: `MusicParty ${planName}`,
+        reason: `EC Music ${planName}`,
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',

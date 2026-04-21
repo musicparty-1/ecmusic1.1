@@ -96,6 +96,11 @@ export class EventsController {
     return this.eventsService.getAdminLogs();
   }
 
+  @Get('search')
+  search(@Query('q') q: string) {
+    return this.eventsService.searchActiveEvents(q);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.findOne(id);

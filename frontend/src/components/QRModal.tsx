@@ -31,7 +31,7 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, url, onCopy, activeD
     img.onload = () => {
       ctx.drawImage(img, 0, 0, size, size);
       const a = document.createElement('a');
-      a.download = 'qr-musicparty.png';
+      a.download = 'qr-ecmusic.png';
       a.href = canvas.toDataURL('image/png');
       a.click();
     };

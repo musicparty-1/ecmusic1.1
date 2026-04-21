@@ -11,7 +11,7 @@ void main() {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
-  runApp(const ProviderScope(child: MusicPartyApp()));
+  runApp(const ProviderScope(child: EcMusicApp()));
 }
 
 /// Parsea el event ID desde la URL (funciona en Flutter Web).
@@ -30,15 +30,15 @@ int? _parseEventIdFromUrl() {
   return null;
 }
 
-class MusicPartyApp extends StatelessWidget {
-  const MusicPartyApp({super.key});
+class EcMusicApp extends StatelessWidget {
+  const EcMusicApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     final eventId = _parseEventIdFromUrl();
 
     return MaterialApp(
-      title: 'MusicParty',
+      title: 'EC Music',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,

@@ -27,11 +27,11 @@ export default function TermsPage() {
         {[
           {
             title: '1. Aceptación de los Términos',
-            body: `Al acceder y utilizar MusicParty (el "Servicio"), usted acepta quedar vinculado por estos Términos de Uso. Si no está de acuerdo con alguna parte de estos términos, no podrá acceder al Servicio.`,
+            body: `Al acceder y utilizar EC Music (el "Servicio"), usted acepta quedar vinculado por estos Términos de Uso. Si no está de acuerdo con alguna parte de estos términos, no podrá acceder al Servicio.`,
           },
           {
             title: '2. Descripción del Servicio',
-            body: `MusicParty es una plataforma de votación musical en tiempo real diseñada para eventos en vivo. Permite a los DJs gestionar listas de canciones y a los asistentes votar sus canciones favoritas mediante un código QR, sin necesidad de crear una cuenta.`,
+            body: `EC Music es una plataforma de votación musical en tiempo real diseñada para eventos en vivo. Permite a los DJs gestionar listas de canciones y a los asistentes votar sus canciones favoritas mediante un código QR, sin necesidad de crear una cuenta.`,
           },
           {
             title: '3. Cuentas de Usuario (DJ)',
@@ -47,7 +47,7 @@ export default function TermsPage() {
           },
           {
             title: '6. Propiedad Intelectual',
-            body: `El Servicio y su contenido original, características y funcionalidades son y seguirán siendo propiedad exclusiva de MusicParty y sus licenciantes. El software está protegido por leyes de derechos de autor y otras leyes de propiedad intelectual. Los nombres y logos de canciones y artistas pertenecen a sus respectivos titulares.`,
+            body: `El Servicio y su contenido original, características y funcionalidades son y seguirán siendo propiedad exclusiva de EC Music y sus licenciantes. El software está protegido por leyes de derechos de autor y otras leyes de propiedad intelectual. Los nombres y logos de canciones y artistas pertenecen a sus respectivos titulares.`,
           },
           {
             title: '7. Plan de Prueba y Facturación',
@@ -55,7 +55,7 @@ export default function TermsPage() {
           },
           {
             title: '8. Limitación de Responsabilidad',
-            body: `MusicParty no garantiza que el Servicio estará disponible de forma ininterrumpida, libre de errores o que los resultados sean precisos. En ningún caso MusicParty será responsable de daños indirectos, incidentales, especiales o consecuentes derivados del uso o la imposibilidad de usar el Servicio.`,
+            body: `EC Music no garantiza que el Servicio estará disponible de forma ininterrumpida, libre de errores o que los resultados sean precisos. En ningún caso EC Music será responsable de daños indirectos, incidentales, especiales o consecuentes derivados del uso o la imposibilidad de usar el Servicio.`,
           },
           {
             title: '9. Terminación',
@@ -71,7 +71,7 @@ export default function TermsPage() {
           },
           {
             title: '12. Contacto',
-            body: `Si tiene preguntas sobre estos Términos de Uso, puede contactarnos en: support@musicparty.app`,
+            body: `Si tiene preguntas sobre estos Términos de Uso, puede contactarnos en: support@ecmusic.app`,
           },
         ].map((section) => (
           <section key={section.title} style={{ marginBottom: '2.5rem' }}>
@@ -79,7 +79,7 @@ export default function TermsPage() {
               {section.title}
             </h2>
             <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-              {section.body.replace(/MusicParty/g, 'EC Music')}
+              {section.body.replace(/EC Music/g, 'EC Music')}
             </div>
           </section>
         ))}

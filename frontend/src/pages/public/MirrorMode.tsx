@@ -723,7 +723,7 @@ const MirrorMode = () => {
               fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)',
               fontWeight: '600', letterSpacing: '0.05em',
             }}>
-              musicparty.app/event/{id}
+              ecmusic.app/event/{id}
             </p>
           </motion.div>
         </aside>

@@ -314,34 +314,7 @@ const DJHome = () => {
           ))}
         </div>
 
-        {/* ── BILLING BANNER ──────────────────────────── */}
-        {billingStatus && billingStatus.subscriptionStatus !== 'ACTIVE' && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-            style={{
-              marginBottom: '1.5rem',
-              background: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-              border: `1px solid ${billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.2)'}`,
-              borderRadius: '0.75rem',
-              padding: '0.75rem 1.25rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
-            }}
-          >
-            <span style={{ fontSize: '0.8rem', color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#f59e0b' }}>
-              {billingStatus.subscriptionStatus === 'EXPIRED'
-                ? '⚠ Tu período de prueba expiró.'
-                : `◷ Tu prueba vence en ${billingStatus.daysLeft} días.`}
-            </span>
-            <button type="button" onClick={() => navigate('/dj/billing')} style={{
-              background: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#f59e0b',
-              color: billingStatus.subscriptionStatus === 'EXPIRED' ? 'white' : '#000',
-              border: 'none', borderRadius: '9999px', padding: '0.25rem 0.85rem',
-              fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              {billingStatus.subscriptionStatus === 'EXPIRED' ? 'Elegir plan' : 'Ver planes'}
-            </button>
-          </motion.div>
-        )}
+        {/* ── BILLING BANNER (HIDDEN FOR MVP) ──────────────────────────── */}
 
         {/* ── SEARCH ──────────────────────────────────── */}
         <div style={{ position: 'relative', marginBottom: '2rem' }}>
@@ -673,23 +646,6 @@ const DJHome = () => {
                       onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                     />
                   </div>
-                </div>
-
-                {/* Logo URL */}
-                <div style={{ position: 'relative' }}>
-                  <Image size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563', pointerEvents: 'none' }} />
-                  <input type="url" placeholder="URL del logo (opcional)" value={newEvent.logoUrl}
-                    onChange={(e) => setNewEvent({ ...newEvent, logoUrl: e.target.value })}
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      paddingLeft: '2.6rem', paddingRight: '1rem', paddingTop: '0.8rem', paddingBottom: '0.8rem',
-                      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '0.75rem', color: 'white', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
-                      transition: 'border-color 0.2s',
-                    }}
-                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)')}
-                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-                  />
                 </div>
 
                 {/* Templates Dropdown */}

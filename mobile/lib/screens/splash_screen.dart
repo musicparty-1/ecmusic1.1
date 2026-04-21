@@ -184,7 +184,7 @@ class _SplashScreenState extends State<SplashScreen>
                               begin: Alignment.topLeft, end: Alignment.bottomRight,
                             ).createShader(b),
                             child: const Text(
-                              'MusicParty',
+                              'EC Music',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 42,
@@ -286,33 +286,15 @@ class _AnimatedLogo extends StatelessWidget {
     child: Container(
       width: 96, height: 96,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF6D28D9), kPrimary, kSecondary],
-        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: kPrimary.withValues(alpha: 0.55), blurRadius: 40, offset: const Offset(0, 12)),
-          BoxShadow(color: kSecondary.withValues(alpha: 0.25), blurRadius: 60, spreadRadius: -10),
+          BoxShadow(color: kPrimary.withValues(alpha: 0.5), blurRadius: 35, offset: const Offset(0, 12)),
         ],
       ),
-      child: Stack(alignment: Alignment.center, children: [
-        // Shine
-        Positioned(
-          top: 12, left: 16, right: 16,
-          child: Container(
-            height: 1.5,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(99),
-              gradient: LinearGradient(colors: [
-                Colors.white.withValues(alpha: 0), Colors.white.withValues(alpha: 0.4),
-                Colors.white.withValues(alpha: 0),
-              ]),
-            ),
-          ),
-        ),
-        const Icon(Icons.music_note_rounded, color: Colors.white, size: 48),
-      ]),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+      ),
     ),
   );
 }

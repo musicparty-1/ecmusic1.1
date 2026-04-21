@@ -1,4 +1,4 @@
-# 🎵 MusicParty 1.0
+# 🎵 EC Music 1.0
 
 Una plataforma interactiva de votación musical en tiempo real para eventos, boliches y fiestas. Los asistentes votan por las canciones que quieren escuchar mientras el DJ controla la experiencia desde un dashboard profesional.
 
@@ -16,7 +16,7 @@ Una plataforma interactiva de votación musical en tiempo real para eventos, bol
 ## 🏗️ Arquitectura del Proyecto
 
 ```
-musicparty1.0/
+ecmusic1.0/
 ├── backend/                 # NestJS + Prisma
 │   ├── src/
 │   │   ├── auth/           # Autenticación JWT
@@ -81,8 +81,8 @@ musicparty1.0/
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/musicparty1.0.git
-cd musicparty1.0
+git clone https://github.com/tu-usuario/ecmusic1.0.git
+cd ecmusic1.0
 ```
 
 ### 2. Backend
@@ -248,9 +248,9 @@ Este proyecto está bajo licencia MIT. Ver [LICENSE](./LICENSE) para detalles.
 ## 📧 Contacto
 
 Para soporte o preguntas:
-- Email: info@musicparty.app
-- Twitter: [@MusicPartyApp](https://twitter.com)
+- Email: info@ecmusic.app
+- Twitter: [@EcMusicApp](https://twitter.com)
 
 ---
 
-**MusicParty** — El poder de la música en tus manos 🎧
+**EC Music** — El poder de la música en tus manos 🎧

@@ -1,4 +1,4 @@
-# Proyecto MusicParty — Estado actual (24/03/2026)
+# Proyecto EC Music — Estado actual (24/03/2026)
 
 ## Estructura general
 - **backend/** (NestJS, TypeScript, Prisma)
@@ -103,4 +103,4 @@ npx localtunnel --port 8080
 
 ### Última actualización: 12/04/2026
 
-Este documento resume el estado actual del proyecto MusicParty, incluyendo tecnologías, estructura de carpetas e instrucciones estandarizadas de despliegue en desarrollo. Para detalles específicos, consultar los archivos `README.md`, `package.json` de cada subproyecto, y `pubspec.yaml` de móvil.
+Este documento resume el estado actual del proyecto EC Music, incluyendo tecnologías, estructura de carpetas e instrucciones estandarizadas de despliegue en desarrollo. Para detalles específicos, consultar los archivos `README.md`, `package.json` de cada subproyecto, y `pubspec.yaml` de móvil.

@@ -523,16 +523,7 @@ const DJDashboard = () => {
         )}
         {/* Right: actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto', flexShrink: 0 }}>
-          {billingStatus && (
-            <button type="button" className="btn-pill dj-topbar-billing" aria-label="Ver estado de facturación" onClick={() => navigate('/dj/billing')} style={{
-              background: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.15)' : billingStatus.subscriptionStatus === 'ACTIVE' ? 'rgba(16,185,129,0.12)' : 'rgba(251,191,36,0.12)',
-              borderColor: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.4)' : billingStatus.subscriptionStatus === 'ACTIVE' ? 'rgba(16,185,129,0.3)' : 'rgba(251,191,36,0.3)',
-              color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : billingStatus.subscriptionStatus === 'ACTIVE' ? '#10b981' : '#fbbf24',
-              fontWeight: '700',
-            }}>
-              {billingStatus.subscriptionStatus === 'EXPIRED' ? '⚠ Expirado' : billingStatus.subscriptionStatus === 'ACTIVE' ? `✓ ${billingStatus.plan}` : `◷ ${billingStatus.daysLeft}d`}
-            </button>
-          )}
+          {/* ── BILLING PILL (HIDDEN FOR MVP) ──────────────────────────── */}
 
           {/* Separator */}
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)', margin: '0 0.1rem' }} />
@@ -585,34 +576,7 @@ const DJDashboard = () => {
         </div>
       </nav>
 
-      {/* ── BILLING BANNER ─────────────────────────────────── */}
-      <AnimatePresence>
-        {billingStatus && (billingStatus.subscriptionStatus === 'EXPIRED' || (billingStatus.subscriptionStatus === 'TRIAL' && billingStatus.daysLeft <= 5)) && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            style={{
-              background: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.08)',
-              borderBottom: `1px solid ${billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.25)' : 'rgba(251,191,36,0.2)'}`,
-              padding: '0.5rem 1.25rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
-            }}
-          >
-            <span style={{ fontSize: '0.78rem', color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#fbbf24' }}>
-              {billingStatus.subscriptionStatus === 'EXPIRED'
-                ? '⚠ Tu período de prueba expiró. Algunas funciones están bloqueadas.'
-                : `◷ Tu prueba vence en ${billingStatus.daysLeft} día${billingStatus.daysLeft !== 1 ? 's' : ''}.`}
-            </span>
-            <button type="button" onClick={() => navigate('/dj/billing')} style={{
-              background: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#fbbf24',
-              color: billingStatus.subscriptionStatus === 'EXPIRED' ? 'white' : '#000',
-              border: 'none', borderRadius: '999px', padding: '0.25rem 0.8rem',
-              fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
-            }}>
-              {billingStatus.subscriptionStatus === 'EXPIRED' ? 'Elegir plan' : 'Ver planes'}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ── BILLING BANNER (HIDDEN FOR MVP) ─────────────────────────────────── */}
 
       {/* ── EVENTS DROPDOWN PANEL ──────────────────────────── */}
       <AnimatePresence>
@@ -828,7 +792,7 @@ const DJDashboard = () => {
                 {[
                   { icon: <ExternalLink size={13} />, label: 'Proyectar', action: () => { window.open(mirrorUrl, '_blank'); setShowSettingsPanel(false); } },
                   { icon: <BarChart2 size={13} />, label: 'Analytics', action: () => { selectedEventId && navigate(`/dj/events/${selectedEventId}/analytics`); setShowSettingsPanel(false); } },
-                  { icon: <Settings size={13} />, label: 'Planes y billing', action: () => { navigate('/dj/billing'); setShowSettingsPanel(false); } },
+                  /* Planes y billing oculto para el MVP */
                 ].map(item => (
                   <button key={item.label} type="button" onClick={item.action}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.5rem 0.25rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', fontFamily: 'inherit' }}

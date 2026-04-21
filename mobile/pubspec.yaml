@@ -1,5 +1,5 @@
-name: musicparty
-description: "MusicParty - Votá las canciones en eventos en vivo. Escaneá el QR, elegí tus favoritas y hacé que suenen."
+name: ecmusic
+description: "EC Music - Votá las canciones en eventos en vivo. Escaneá el QR, elegí tus favoritas y hacé que suenen."
 publish_to: 'none'
 version: 1.0.1+2
 
@@ -22,3 +22,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/

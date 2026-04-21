@@ -11,10 +11,10 @@ async function main() {
 
   // 1. Crear DJ de prueba
   const dj = await prisma.dJUser.upsert({
-    where: { email: 'dj@musicparty.com' },
+    where: { email: 'dj@ecmusic.com' },
     update: { password: hashedPassword },
     create: {
-      email: 'dj@musicparty.com',
+      email: 'dj@ecmusic.com',
       name: 'DJ Demo',
       password: hashedPassword,
       plan: 'DEMO',
@@ -119,7 +119,7 @@ async function main() {
   
   const event = await prisma.event.create({
     data: {
-      name: 'Gran Fiesta MusicParty',
+      name: 'Gran Fiesta EC Music',
       venue: 'Estadio Obras',
       dj_id: dj.id,
       maxVotesPerDevice: 3,
@@ -140,7 +140,7 @@ async function main() {
     });
   }
 
-  console.log('Evento de prueba "Gran Fiesta MusicParty" creado con 3 votos de límite.');
+  console.log('Evento de prueba "Gran Fiesta EC Music" creado con 3 votos de límite.');
 
   // 5. Catálogo de canciones populares
   await prisma.catalogSong.deleteMany();

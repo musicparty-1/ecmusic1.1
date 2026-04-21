@@ -7,10 +7,10 @@ async function main() {
   const hashedPassword = await bcrypt.hash('dj123456', 10);
   try {
     const dj = await prisma.dJUser.upsert({
-      where: { email: 'dj@musicparty.com' },
+      where: { email: 'dj@ecmusic.com' },
       update: { password: hashedPassword },
       create: {
-        email: 'dj@musicparty.com',
+        email: 'dj@ecmusic.com',
         name: 'DJ Demo',
         password: hashedPassword,
         plan: 'DEMO',

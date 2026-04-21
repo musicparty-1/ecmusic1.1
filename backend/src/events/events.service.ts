@@ -371,4 +371,31 @@ export class EventsService {
       return [];
     }
   }
+
+  async searchActiveEvents(q: string) {
+    const whereClause: any = { status: 'ACTIVE' };
+    if (q && q.trim().length > 0) {
+      whereClause.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { venue: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const events = await this.prisma.event.findMany({
+      where: whereClause,
+      include: {
+        dj: { select: { name: true } }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 20
+    });
+
+    return events.map(e => ({
+      id: e.id,
+      name: e.name,
+      venue: e.venue,
+      status: e.status,
+      djName: e.dj?.name || 'DJ'
+    }));
+  }
 }

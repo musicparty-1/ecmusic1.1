@@ -157,7 +157,7 @@ class _EntryScreenState extends State<EntryScreen>
                           shaderCallback: (b) => const LinearGradient(
                             colors: [Colors.white, Color(0xFFa78bfa)],
                           ).createShader(b),
-                          child: const Text('MusicParty',
+                          child: const Text('EC Music',
                               style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 26,
@@ -276,12 +276,12 @@ class _LogoState extends State<_Logo> with SingleTickerProviderStateMixin {
       width: 36, height: 36,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6D28D9), kPrimary, kSecondary],
-        ),
         boxShadow: [BoxShadow(color: kPrimary.withValues(alpha: 0.4), blurRadius: 14)],
       ),
-      child: const Icon(Icons.music_note_rounded, color: Colors.white, size: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+      ),
     ),
   );
 }

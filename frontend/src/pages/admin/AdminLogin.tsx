@@ -5,7 +5,7 @@ import { Lock, Eye, EyeOff, Zap, ShieldCheck } from 'lucide-react';
 // Credenciales hardcodeadas — solo para uso interno
 const ADMIN_USERS: Record<string, { password: string; displayName: string; avatar: string }> = {
   enzul: {
-    password: 'musicparty2024',
+    password: 'ecmusic2024',
     displayName: 'Enzo',
     avatar: '🎧',
   },

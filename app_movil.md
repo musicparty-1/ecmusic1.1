@@ -1,4 +1,4 @@
-# Proyecto MusicParty — App Móvil (Flutter)
+# Proyecto EC Music — App Móvil (Flutter)
 
 ## Mobile (Flutter)
 - Framework: Flutter
@@ -17,7 +17,7 @@
 
 ### Última actualización: 24/03/2026
 
-Este documento resume el estado actual de la app móvil de MusicParty. Para detalles específicos, consultar el archivo pubspec.yaml y la carpeta lib/ del subproyecto mobile.
+Este documento resume el estado actual de la app móvil de EC Music. Para detalles específicos, consultar el archivo pubspec.yaml y la carpeta lib/ del subproyecto mobile.
 
 ---
 

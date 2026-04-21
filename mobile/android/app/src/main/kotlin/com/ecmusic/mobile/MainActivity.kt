@@ -1,4 +1,4 @@
-package com.musicparty.mobile
+package com.ecmusic.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

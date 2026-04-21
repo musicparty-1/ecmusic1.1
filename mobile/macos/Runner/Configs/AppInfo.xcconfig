@@ -8,7 +8,7 @@
 PRODUCT_NAME = mobile
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.musicparty.mobile
+PRODUCT_BUNDLE_IDENTIFIER = com.ecmusic.mobile
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.musicparty. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.ecmusic. All rights reserved.
