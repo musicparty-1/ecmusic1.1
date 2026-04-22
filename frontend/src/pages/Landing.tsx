@@ -84,7 +84,7 @@ const Landing = () => {
               boxShadow: '0 4px 14px rgba(124,58,237,0.4)',
             }}
           >
-            Empezar gratis
+            Crear cuenta
           </motion.button>
         </div>
       </nav>
@@ -159,7 +159,7 @@ const Landing = () => {
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
               }}
             >
-              <Zap size={16} fill="white" /> Empezar gratis — 30 días
+              <Zap size={16} fill="white" /> Crear cuenta
             </motion.button>
             <button type="button" onClick={() => navigate('/dj/login')}
               style={{
@@ -246,63 +246,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* ── PLANS SUMMARY */}
-      <section style={{
-        position: 'relative', zIndex: 1,
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        padding: '5rem 1.5rem',
-        textAlign: 'center',
-        background: 'rgba(139,92,246,0.03)',
-      }}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-        >
-          <h2 style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-            Empezá gratis hoy
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', marginBottom: '2rem' }}>
-            30 días de prueba sin tarjeta. Después elegís el plan que mejor se adapte.
-          </p>
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap',
-            marginBottom: '2.5rem',
-          }}>
-            {[
-              { plan: 'Demo', price: 'Gratis', color: '#64748b' },
-              { plan: 'Starter', price: '$4.999 ARS', color: '#8b5cf6' },
-              { plan: 'Pro', price: '$9.999 ARS', color: '#ec4899' },
-              { plan: 'Agency', price: '$19.999 ARS', color: '#f59e0b' },
-            ].map(p => (
-              <div key={p.plan} style={{
-                background: '#0d1117',
-                border: `1px solid ${p.color}33`,
-                borderRadius: '0.875rem',
-                padding: '0.9rem 1.5rem',
-                minWidth: 130,
-              }}>
-                <div style={{ fontWeight: '800', color: p.color, fontSize: '0.85rem', marginBottom: '0.2rem' }}>{p.plan}</div>
-                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{p.price}</div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.1rem' }}>/ mes</div>
-              </div>
-            ))}
-          </div>
-          <motion.button type="button" onClick={() => navigate('/dj/register')}
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-            style={{
-              background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)',
-              border: 'none', color: 'white', borderRadius: '9999px',
-              padding: '0.9rem 2.25rem', cursor: 'pointer',
-              fontSize: '1rem', fontWeight: '800', fontFamily: 'inherit',
-              boxShadow: '0 8px 30px rgba(124,58,237,0.4)',
-            }}
-          >
-            Crear cuenta gratis
-          </motion.button>
-        </motion.div>
-      </section>
 
       {/* ── FOOTER */}
       <footer style={{
@@ -316,7 +259,6 @@ const Landing = () => {
         <div style={{ display: 'flex', gap: '1.5rem' }}>
           <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dj/login')}>Login</span>
           <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dj/register')}>Registro</span>
-          <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dj/billing')}>Planes</span>
         </div>
       </footer>
 
