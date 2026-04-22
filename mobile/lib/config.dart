@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 // Dispositivo real  → http://<IP_DE_TU_PC>:8080/api
 // Web / Windows     → http://localhost:8080/api
 // Producción        → https://tu-backend.railway.app/api
-const String kBaseUrl = 'http://127.0.0.1:8080/api';
+const String kBaseUrl = 'https://ecmusic-api.onrender.com/api';
 
 // ─── Tema de colores ──────────────────────────────────────────────────────────
 const kBgColor = Color(0xFF030010);
