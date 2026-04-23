@@ -197,6 +197,13 @@ function AdminDashboardContent({ session, onLogout }: {
   const [syncing, setSyncing] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Catalog manager state
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'catalog'>('telemetry');
+  const [catalogCount, setCatalogCount] = useState<number | null>(null);
+  const [importText, setImportText] = useState('');
+  const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+  const [previewRows, setPreviewRows] = useState<{ title: string; artist: string; genre: string; bpm: string }[]>([]);
+
   const fetchAll = async (silent = false) => {
     if (!silent) { setLoading(true); setFetchError(null); }
     else setSyncing(true);
@@ -322,6 +329,65 @@ function AdminDashboardContent({ session, onLogout }: {
   const voteTrend = voteHistory.map(p => p.count);
   const activeEvents = events.filter(e => e.status === 'ACTIVE');
 
+  // --- Catalog helpers ---
+  const ADMIN_KEY = 'mp-admin-secret-2024';
+
+  const fetchCatalogCount = async () => {
+    try {
+      const res = await fetch(`${BASE}/events/admin-catalog?key=${ADMIN_KEY}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) setCatalogCount(data.length);
+    } catch { /* silent */ }
+  };
+
+  const parseImportText = (text: string) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+    return lines.map(line => {
+      // Support tab-separated (Excel paste) or comma-separated
+      const sep = line.includes('\t') ? '\t' : ',';
+      const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+      return {
+        title: cols[0] || '',
+        artist: cols[1] || '',
+        genre: cols[2] || 'General',
+        bpm: cols[3] || '',
+      };
+    }).filter(r => r.title && r.artist);
+  };
+
+  const handleTextChange = (text: string) => {
+    setImportText(text);
+    setPreviewRows(parseImportText(text));
+    setImportStatus({ type: 'idle', message: '' });
+  };
+
+  const handleImport = async () => {
+    if (previewRows.length === 0) return;
+    setImportStatus({ type: 'loading', message: 'Importando canciones...' });
+    try {
+      const songs = previewRows.map(r => ({
+        title: r.title,
+        artist: r.artist,
+        genre: r.genre || 'General',
+        bpm: r.bpm ? parseInt(r.bpm) || undefined : undefined,
+      }));
+      const res = await fetch(`${BASE}/events/admin-catalog-import?key=${ADMIN_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songs }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error del servidor');
+      setImportStatus({ type: 'success', message: `✅ ${data.imported} canciones nuevas agregadas al catálogo.` });
+      setImportText('');
+      setPreviewRows([]);
+      fetchCatalogCount();
+    } catch (err) {
+      setImportStatus({ type: 'error', message: `❌ Error: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  };
+
   return (
     <div style={{
       background: '#020614',
@@ -392,16 +458,96 @@ function AdminDashboardContent({ session, onLogout }: {
       </nav>
 
       <div style={{ padding: '2rem', maxWidth: 1300, margin: '0 auto' }}>
-        {/* Page title */}
+        {/* Page title + Tabs */}
         <div style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '-0.03em', margin: 0, background: 'linear-gradient(90deg, #e9d5ff 0%, #a78bfa 55%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Telemetría Global
+            {activeTab === 'telemetry' ? 'Telemetría Global' : '🎵 Gestión de Catálogo'}
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', marginTop: '0.3rem' }}>
-            Vista en tiempo real de todos los eventos · Actualiza cada {POLL_MS / 1000}s
+            {activeTab === 'telemetry' ? `Vista en tiempo real de todos los eventos · Actualiza cada ${POLL_MS / 1000}s` : 'Agregá canciones al catálogo compartido de todos los DJs'}
           </p>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            {([{ id: 'telemetry', label: '📊 Telemetría' }, { id: 'catalog', label: '🎵 Catálogo' }] as const).map(tab => (
+              <button key={tab.id} type="button"
+                onClick={() => { setActiveTab(tab.id); if (tab.id === 'catalog') fetchCatalogCount(); }}
+                style={{ padding: '0.4rem 1.1rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '700', border: `1px solid ${activeTab === tab.id ? '#8b5cf6' : 'rgba(255,255,255,0.1)'}`, background: activeTab === tab.id ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.03)', color: activeTab === tab.id ? '#a78bfa' : 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* ── CATALOG TAB ── */}
+        {activeTab === 'catalog' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <StatCard icon={<Music size={18} color="#8b5cf6" />} label="Canciones en catálogo" value={catalogCount ?? '…'} sub="disponibles para todos los DJs" color="#8b5cf6" />
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '1.1rem', padding: '1.5rem', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: '#a78bfa', textTransform: 'uppercase', marginBottom: '0.3rem' }}>➕ Importar canciones nuevas</div>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Copiá las celdas de Excel/Google Sheets y pegá acá. Columnas: <strong style={{ color: '#e2e8f0' }}>Título · Artista · Género (opcional) · BPM (opcional)</strong></p>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '0.6rem', padding: '0.75rem 1rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1.7 }}>
+                # Ejemplo (pegá directamente desde Excel o Google Sheets):<br/>
+                Gata Only &nbsp;&nbsp; FloyyMenor &nbsp;&nbsp; Reggaetón &nbsp;&nbsp; 100<br/>
+                Blinding Lights &nbsp;&nbsp; The Weeknd &nbsp;&nbsp; Pop &nbsp;&nbsp; 171
+              </div>
+              <textarea value={importText} onChange={e => handleTextChange(e.target.value)}
+                placeholder={"Pegá aquí tus canciones desde Excel o escríbelas...\n(una canción por línea, separado por comas o tabs)"}
+                style={{ width: '100%', minHeight: 180, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.75rem', color: 'white', fontSize: '0.85rem', padding: '0.85rem 1rem', resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              />
+              {previewRows.length > 0 && (
+                <div style={{ marginTop: '1rem', background: 'rgba(0,0,0,0.25)', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ padding: '0.6rem 1rem', fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.1em', color: '#22c55e', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    Vista previa · {previewRows.length} canción{previewRows.length !== 1 ? 'es' : ''} detectada{previewRows.length !== 1 ? 's' : ''}
+                  </div>
+                  <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          {['Título', 'Artista', 'Género', 'BPM'].map(h => <th key={h} style={{ padding: '0.5rem 0.85rem', textAlign: 'left', color: 'rgba(255,255,255,0.25)', fontWeight: '700', fontSize: '0.6rem', textTransform: 'uppercase' }}>{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewRows.map((r, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <td style={{ padding: '0.45rem 0.85rem', color: '#f1f5f9', fontWeight: '600' }}>{r.title}</td>
+                            <td style={{ padding: '0.45rem 0.85rem', color: 'rgba(255,255,255,0.5)' }}>{r.artist}</td>
+                            <td style={{ padding: '0.45rem 0.85rem', color: 'rgba(255,255,255,0.35)' }}>{r.genre || 'General'}</td>
+                            <td style={{ padding: '0.45rem 0.85rem' }}>{r.bpm ? <span style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', borderRadius: '0.25rem', padding: '0.1rem 0.35rem', fontWeight: '700', fontSize: '0.7rem' }}>{r.bpm}</span> : <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {importStatus.type !== 'idle' && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', borderRadius: '0.65rem', fontSize: '0.82rem', fontWeight: '600', background: importStatus.type === 'success' ? 'rgba(34,197,94,0.12)' : importStatus.type === 'error' ? 'rgba(239,68,68,0.12)' : 'rgba(139,92,246,0.1)', border: `1px solid ${importStatus.type === 'success' ? 'rgba(34,197,94,0.3)' : importStatus.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(139,92,246,0.2)'}`, color: importStatus.type === 'success' ? '#22c55e' : importStatus.type === 'error' ? '#ef4444' : '#a78bfa' }}>
+                  {importStatus.message}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.1rem' }}>
+                <button type="button" onClick={() => { setImportText(''); setPreviewRows([]); setImportStatus({ type: 'idle', message: '' }); }} disabled={!importText}
+                  style={{ padding: '0.7rem 1.4rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontWeight: '700', cursor: importText ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: importText ? 1 : 0.4 }}>
+                  Limpiar
+                </button>
+                <motion.button type="button" onClick={handleImport} disabled={previewRows.length === 0 || importStatus.type === 'loading'}
+                  whileHover={{ scale: previewRows.length > 0 ? 1.02 : 1 }} whileTap={{ scale: 0.97 }}
+                  style={{ flex: 1, padding: '0.7rem 1.4rem', borderRadius: '0.75rem', background: previewRows.length > 0 ? 'linear-gradient(135deg, #7c3aed, #8b5cf6)' : 'rgba(255,255,255,0.05)', border: 'none', color: previewRows.length > 0 ? 'white' : 'rgba(255,255,255,0.3)', fontWeight: '800', fontSize: '0.88rem', cursor: previewRows.length > 0 ? 'pointer' : 'not-allowed', boxShadow: previewRows.length > 0 ? '0 4px 16px rgba(124,58,237,0.4)' : 'none' }}>
+                  {importStatus.type === 'loading' ? '⏳ Guardando...' : `Agregar ${previewRows.length > 0 ? previewRows.length + ' canciones' : ''} al Catálogo`}
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TELEMETRY TAB ── */}
+        {activeTab === 'telemetry' && (
+        <div>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40vh', gap: '1rem' }}>
             <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(139,92,246,0.3)', borderTopColor: '#8b5cf6', animation: 'spin 0.9s linear infinite' }} />
@@ -422,7 +568,7 @@ function AdminDashboardContent({ session, onLogout }: {
             <motion.div key="content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
               {/* ── Stat cards ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 <StatCard icon={<Activity size={18} color="#22c55e" />} label="Eventos activos" value={stats?.activeEvents ?? 0} sub={`de ${stats?.totalEvents} totales`} color="#22c55e" />
                 <StatCard icon={<Users size={18} color="#10b981" />} label="Personas activas" value={stats?.totalActiveDevices ?? 0} sub="en eventos en vivo ahora" color="#10b981" />
                 <StatCard icon={<BarChart2 size={18} color="#8b5cf6" />} label="Votos totales" value={(stats?.totalVotes ?? 0).toLocaleString('es-AR')} sub={`~${stats?.avgVotesPerEvent} votos/evento`} color="#8b5cf6" trend={voteTrend} />
@@ -445,7 +591,7 @@ function AdminDashboardContent({ session, onLogout }: {
                       style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                     {activeEvents.length} evento{activeEvents.length !== 1 ? 's' : ''} en vivo ahora
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.75rem' }}>
                     {activeEvents.map(ev => (
                       <div key={ev.id} style={{
                         background: 'linear-gradient(135deg, rgba(34,197,94,0.09) 0%, rgba(34,197,94,0.03) 100%)',
@@ -459,7 +605,7 @@ function AdminDashboardContent({ session, onLogout }: {
                           <StatusBadge status={ev.status} />
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.75rem' }}>📍 {ev.venue}</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                           {[
                             { label: 'Activos', value: ev.activeDevices, color: '#10b981' },
                             { label: 'Votos', value: ev.totalVotes },
@@ -743,6 +889,7 @@ function AdminDashboardContent({ session, onLogout }: {
           </div>
           </>
         )}
+        </div>)}
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

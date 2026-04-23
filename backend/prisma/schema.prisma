@@ -72,8 +72,9 @@ model Song {
   category   String?  @default("General")
   played     Boolean  @default(false)
   played_at  DateTime?
+  bpm        Int?
   created_at DateTime @default(now())
-  event      Event    @relation(fields: [event_id], references: [id])
+  event      Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
   votes      Vote[]
 
   @@map("songs")
@@ -86,7 +87,7 @@ model Vote {
   created_at DateTime @default(now())
   ip_address String?
   user_agent String?
-  song       Song     @relation(fields: [song_id], references: [id])
+  song       Song     @relation(fields: [song_id], references: [id], onDelete: Cascade)
 
   @@map("votes")
 }
@@ -96,6 +97,7 @@ model CatalogSong {
   title  String
   artist String
   genre  String? @default("General")
+  bpm    Int?
 
   @@map("catalog_songs")
 }
@@ -116,6 +118,7 @@ model TemplateSong {
   title       String
   artist      String
   category    String?       @default("General")
+  bpm         Int?
   template    EventTemplate @relation(fields: [template_id], references: [id])
 
   @@map("template_songs")

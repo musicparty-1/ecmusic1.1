@@ -20,6 +20,7 @@ interface Song {
   votes: number;
   played: boolean;
   played_at?: string;
+  bpm?: number;
   created_at: string;
 }
 
@@ -48,7 +49,10 @@ const CatalogSongRow = ({ song, selectedEventId, onAdd }: { song: any; selectedE
     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
   >
     <div>
-      <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#fff' }}>{song.title}</div>
+      <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        {song.title}
+        {song.bpm && <span style={{ fontSize: '0.6rem', padding: '0.1rem 0.3rem', background: 'rgba(255,255,255,0.1)', borderRadius: '0.25rem', color: '#cbd5e1', fontWeight: '700' }}>{song.bpm} BPM</span>}
+      </div>
       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{song.artist}</div>
     </div>
     <button type="button" onClick={onAdd} disabled={!selectedEventId}
@@ -901,8 +905,10 @@ const DJDashboard = () => {
                                 fontSize: '1.05rem', fontWeight: index === 0 ? '800' : '700',
                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                 color: index === 0 ? '#fff' : '#cbd5e1',
+                                display: 'flex', alignItems: 'center', gap: '0.4rem'
                               }}>
                                 {song.title}
+                                {song.bpm && <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem', background: 'rgba(255,255,255,0.12)', borderRadius: '0.25rem', color: '#cbd5e1', fontWeight: '700', lineHeight: 1 }}>{song.bpm}</span>}
                               </div>
                               <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.15rem', fontWeight: '500' }}>
                                 {song.artist}

@@ -142,4 +142,19 @@ export class EventsController {
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.eventsService.delete(id);
   }
+
+  @Post('admin-catalog-import')
+  adminImportCatalog(
+    @Query('key') key: string,
+    @Body() body: { songs: { title: string; artist: string; genre?: string; bpm?: number }[] },
+  ) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Clave inválida');
+    return this.eventsService.importCatalog(body.songs);
+  }
+
+  @Get('admin-catalog')
+  adminGetCatalog(@Query('key') key: string) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Clave inválida');
+    return this.eventsService.getCatalog('');
+  }
 }

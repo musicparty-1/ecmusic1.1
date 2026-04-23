@@ -87,6 +87,7 @@ const DJHome = () => {
         template_id: newEvent.template_id ? parseInt(newEvent.template_id) : undefined,
         logoUrl: newEvent.logoUrl || undefined,
         startDate: newEvent.startDate || undefined,
+        status: isScheduled ? 'PENDING' : 'ACTIVE',
       });
       const newEventId = res.data.id;
       // Copiar canciones de evento anterior si se eligió uno

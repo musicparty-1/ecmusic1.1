@@ -398,4 +398,39 @@ export class EventsService {
       djName: e.dj?.name || 'DJ'
     }));
   }
+
+  // --- ADMIN: CATALOG IMPORT ---
+  async importCatalog(songs: { title: string; artist: string; genre?: string; bpm?: number }[]) {
+    let imported = 0;
+    for (const song of songs) {
+      // Upsert to avoid duplicates based on title and artist
+      const existing = await this.prisma.catalogSong.findFirst({
+        where: {
+          title: { equals: song.title, mode: 'insensitive' },
+          artist: { equals: song.artist, mode: 'insensitive' }
+        }
+      });
+
+      if (!existing) {
+        await this.prisma.catalogSong.create({
+          data: {
+            title: song.title,
+            artist: song.artist,
+            genre: song.genre || 'General',
+            bpm: song.bpm || null
+          }
+        });
+        imported++;
+      } else {
+        // Update bpm or genre if missing
+        if (!existing.bpm && song.bpm) {
+          await this.prisma.catalogSong.update({
+            where: { id: existing.id },
+            data: { bpm: song.bpm }
+          });
+        }
+      }
+    }
+    return { success: true, imported };
+  }
 }
