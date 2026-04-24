@@ -93,12 +93,14 @@ const DJDashboard = () => {
   const [catalogGenres, setCatalogGenres] = useState<{ genre: string; count: number }[]>([]);
   const [songList, setSongList] = useState<Song[]>([]);
   const [newSong, setNewSong] = useState({ title: '', artist: '' });
-  const [catalogSuggestions, setCatalogSuggestions] = useState<{ id: number; title: string; artist: string; genre: string }[]>([]);
+  const [catalogSuggestions, setCatalogSuggestions] = useState<{ id: number; title: string; artist: string; genre: string; bpm?: number }[]>([]);
   const [showCatalogDropdown, setShowCatalogDropdown] = useState(false);
   const [catalogSource, setCatalogSource] = useState<'global' | 'template' | 'event'>('global');
   const [selectedSourceId, setSelectedSourceId] = useState('');
   const [sourceSongs, setSourceSongs] = useState<any[]>([]);
   const [isLoadingSource, setIsLoadingSource] = useState(false);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(false);
+  const [catalogLoadError, setCatalogLoadError] = useState(false);
   const [billingStatus, setBillingStatus] = useState<{ plan: string; subscriptionStatus: string; daysLeft: number } | null>(null);
   const [activeDevices, setActiveDevices] = useState<number>(0);
   const [albumArt, setAlbumArt] = useState<string | null>(null);
@@ -1097,12 +1099,16 @@ const DJDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                 <span style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '0.1em', color: '#a78bfa', textTransform: 'uppercase' }}>➕ Agregar Canción</span>
                 <button type="button" onClick={async () => {
+                  setIsCatalogLoading(true);
+                  setCatalogLoadError(false);
+                  setCatalogGenreFilter(''); setCatalogSearchTerm('');
+                  setCatalogSource('global');
+                  setShowFullCatalogModal(true);
                   try {
                     const [catRes, genreRes] = await Promise.all([catalogApi.getAll(), catalogApi.getGenres()]);
                     setFullCatalog(catRes.data); setCatalogGenres(genreRes.data);
-                    setCatalogGenreFilter(''); setCatalogSearchTerm('');
-                    setShowFullCatalogModal(true);
-                  } catch { showToast('Error al cargar catálogo', 'error'); }
+                  } catch { setCatalogLoadError(true); }
+                  finally { setIsCatalogLoading(false); }
                 }} style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '0.5rem', color: '#a78bfa', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.65rem' }}>
                   <List size={13} /> Catálogo
                 </button>
@@ -1124,7 +1130,10 @@ const DJDashboard = () => {
                           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.12)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
-                          <div style={{ fontSize: '0.88rem', fontWeight: '700' }}>{s.title}</div>
+                          <div style={{ fontSize: '0.88rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            {s.title}
+                            {s.bpm && <span style={{ fontSize: '0.6rem', padding: '0.1rem 0.3rem', background: 'rgba(139,92,246,0.15)', borderRadius: '0.2rem', color: '#a78bfa', fontWeight: '700' }}>{s.bpm} BPM</span>}
+                          </div>
                           <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.1rem' }}>{s.artist} · {s.genre}</div>
                         </div>
                       ))}
@@ -1618,7 +1627,16 @@ const DJDashboard = () => {
 
               {/* Lista Dinámica */}
               <div style={{ overflowY: 'auto', flex: 1 }}>
-                {isLoadingSource ? (
+                {isCatalogLoading ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid rgba(139,92,246,0.2)', borderTopColor: '#8b5cf6', animation: 'spin 0.9s linear infinite' }} />
+                    <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Cargando catálogo...</span>
+                  </div>
+                ) : catalogLoadError ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444', fontSize: '0.85rem' }}>
+                    Error al cargar el catálogo. Intentá cerrar y abrir de nuevo.
+                  </div>
+                ) : isLoadingSource ? (
                   <div style={{ textAlign: 'center', padding: '3rem' }}><SkeletonLoader /></div>
                 ) : (() => {
                   const displaySongs = catalogSource === 'global' ? fullCatalog : sourceSongs;
@@ -1676,6 +1694,7 @@ const DJDashboard = () => {
           from { transform: translate(-50%, 20px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         body { background: #000 !important; }
       `}</style>
     </div>
