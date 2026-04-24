@@ -372,7 +372,7 @@ function AdminDashboardContent({ session, onLogout }: {
         genre: r.genre || 'General',
         bpm: r.bpm ? parseInt(r.bpm) || undefined : undefined,
       }));
-      const res = await fetch(`${BASE}/events/admin-catalog-import?key=${ADMIN_KEY}`, {
+      const res = await fetch(`${BASE}/catalog/admin-import?key=${ADMIN_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ songs }),

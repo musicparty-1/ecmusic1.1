@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, ForbiddenException } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CatalogService } from './catalog.service';
 
@@ -20,5 +20,14 @@ export class CatalogController {
   @Get('genres')
   getGenres() {
     return this.catalogService.getGenres();
+  }
+
+  @Post('admin-import')
+  adminImport(
+    @Query('key') key: string,
+    @Body() body: { songs: { title: string; artist: string; genre?: string; bpm?: number }[] },
+  ) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Clave inválida');
+    return this.catalogService.importSongs(body.songs);
   }
 }
