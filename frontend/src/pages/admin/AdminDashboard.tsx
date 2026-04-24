@@ -199,10 +199,26 @@ function AdminDashboardContent({ session, onLogout }: {
 
   // Catalog manager state
   const [activeTab, setActiveTab] = useState<'telemetry' | 'catalog'>('telemetry');
+  const [catalogSubTab, setCatalogSubTab] = useState<'global' | 'playlists'>('global');
   const [catalogCount, setCatalogCount] = useState<number | null>(null);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
   const [previewRows, setPreviewRows] = useState<{ title: string; artist: string; genre: string; bpm: string }[]>([]);
+
+  // Playlist management state
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [expandedPlaylist, setExpandedPlaylist] = useState<number | null>(null);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistDesc, setNewPlaylistDesc] = useState('');
+  const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
+  const [playlistImportText, setPlaylistImportText] = useState('');
+  const [playlistPreviewRows, setPlaylistPreviewRows] = useState<{ title: string; artist: string; genre: string; bpm: string }[]>([]);
+  const [playlistImportStatus, setPlaylistImportStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+  const [addToPlaylistId, setAddToPlaylistId] = useState<number | null>(null);
+  const [addSongsText, setAddSongsText] = useState('');
+  const [addSongsPreview, setAddSongsPreview] = useState<{ title: string; artist: string; genre: string; bpm: string }[]>([]);
+  const [addSongsStatus, setAddSongsStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
 
   const fetchAll = async (silent = false) => {
     if (!silent) { setLoading(true); setFetchError(null); }
@@ -388,6 +404,79 @@ function AdminDashboardContent({ session, onLogout }: {
     }
   };
 
+  // --- Playlist helpers ---
+  const fetchPlaylists = async () => {
+    setPlaylistsLoading(true);
+    try {
+      const res = await fetch(`${BASE}/event-templates/admin-all?key=${ADMIN_KEY}`);
+      const data = await res.json();
+      if (Array.isArray(data)) setPlaylists(data);
+    } catch { /* silent */ } finally { setPlaylistsLoading(false); }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim() || playlistPreviewRows.length === 0) return;
+    setPlaylistImportStatus({ type: 'loading', message: 'Creando playlist...' });
+    try {
+      const songs = playlistPreviewRows.map(r => ({
+        title: r.title, artist: r.artist,
+        category: r.genre || 'General',
+        bpm: r.bpm ? parseInt(r.bpm) || undefined : undefined,
+      }));
+      const res = await fetch(`${BASE}/event-templates/admin-create?key=${ADMIN_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newPlaylistName.trim(), description: newPlaylistDesc.trim(), songs }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error del servidor');
+      setPlaylistImportStatus({ type: 'success', message: `✅ Playlist "${data.name}" creada con ${data.songs?.length || 0} canciones.` });
+      setNewPlaylistName(''); setNewPlaylistDesc(''); setPlaylistImportText(''); setPlaylistPreviewRows([]);
+      setShowCreatePlaylist(false);
+      fetchPlaylists();
+    } catch (err) {
+      setPlaylistImportStatus({ type: 'error', message: `❌ Error: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  };
+
+  const handleAddSongsToPlaylist = async (playlistId: number) => {
+    if (addSongsPreview.length === 0) return;
+    setAddSongsStatus({ type: 'loading', message: 'Agregando canciones...' });
+    try {
+      const songs = addSongsPreview.map(r => ({
+        title: r.title, artist: r.artist,
+        category: r.genre || 'General',
+        bpm: r.bpm ? parseInt(r.bpm) || undefined : undefined,
+      }));
+      const res = await fetch(`${BASE}/event-templates/admin-add-songs/${playlistId}?key=${ADMIN_KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songs }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error del servidor');
+      setAddSongsStatus({ type: 'success', message: `✅ ${data.added} canciones agregadas.` });
+      setAddSongsText(''); setAddSongsPreview([]); setAddToPlaylistId(null);
+      fetchPlaylists();
+    } catch (err) {
+      setAddSongsStatus({ type: 'error', message: `❌ Error: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  };
+
+  const handleDeleteSong = async (songId: number) => {
+    try {
+      await fetch(`${BASE}/event-templates/admin-delete-song/${songId}?key=${ADMIN_KEY}`, { method: 'DELETE' });
+      fetchPlaylists();
+    } catch { /* silent */ }
+  };
+
+  const handleDeletePlaylist = async (playlistId: number, name: string) => {
+    if (!confirm(`¿Eliminar la playlist "${name}" y todas sus canciones? Esta acción no se puede deshacer.`)) return;
+    try {
+      await fetch(`${BASE}/event-templates/admin-delete/${playlistId}?key=${ADMIN_KEY}`, { method: 'DELETE' });
+      if (expandedPlaylist === playlistId) setExpandedPlaylist(null);
+      fetchPlaylists();
+    } catch { /* silent */ }
+  };
+
   return (
     <div style={{
       background: '#020614',
@@ -480,7 +569,25 @@ function AdminDashboardContent({ session, onLogout }: {
         {/* ── CATALOG TAB ── */}
         {activeTab === 'catalog' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+
+            {/* Sub-tabs: Global / Playlists */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {([{ id: 'global', label: '🌐 Catálogo Global' }, { id: 'playlists', label: '📋 Playlists' }] as const).map(st => (
+                <button key={st.id} type="button"
+                  onClick={() => {
+                    setCatalogSubTab(st.id);
+                    if (st.id === 'global') fetchCatalogCount();
+                    if (st.id === 'playlists') fetchPlaylists();
+                  }}
+                  style={{ padding: '0.4rem 1.1rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '700', border: `1px solid ${catalogSubTab === st.id ? '#ec4899' : 'rgba(255,255,255,0.1)'}`, background: catalogSubTab === st.id ? 'rgba(236,72,153,0.15)' : 'rgba(255,255,255,0.03)', color: catalogSubTab === st.id ? '#f472b6' : 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>
+                  {st.label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── SUB: CATÁLOGO GLOBAL ── */}
+            {catalogSubTab === 'global' && (<>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
               <StatCard icon={<Music size={18} color="#8b5cf6" />} label="Canciones en catálogo" value={catalogCount ?? '…'} sub="disponibles para todos los DJs" color="#8b5cf6" />
             </div>
             <div style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '1.1rem', padding: '1.5rem', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
@@ -542,6 +649,163 @@ function AdminDashboardContent({ session, onLogout }: {
                 </motion.button>
               </div>
             </div>
+            </>)}
+
+            {/* ── SUB: PLAYLISTS ── */}
+            {catalogSubTab === 'playlists' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                {/* Header + Create button */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.12em', color: '#f472b6', textTransform: 'uppercase' }}>Playlists · {playlists.length} listas</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.2rem' }}>Las playlists son los setlists predefinidos que el DJ elige al crear un evento</div>
+                  </div>
+                  <button type="button" onClick={() => { setShowCreatePlaylist(v => !v); setPlaylistImportStatus({ type: 'idle', message: '' }); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #db2777, #ec4899)', border: 'none', color: 'white', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(236,72,153,0.35)' }}>
+                    <Plus size={14} /> Nueva Playlist
+                  </button>
+                </div>
+
+                {/* Create playlist panel */}
+                {showCreatePlaylist && (
+                  <div style={{ background: 'rgba(236,72,153,0.06)', border: '1px solid rgba(236,72,153,0.25)', borderRadius: '1.1rem', padding: '1.4rem' }}>
+                    <div style={{ fontSize: '0.68rem', fontWeight: '800', letterSpacing: '0.1em', color: '#f472b6', textTransform: 'uppercase', marginBottom: '1rem' }}>➕ Crear nueva playlist</div>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <input value={newPlaylistName} onChange={e => setNewPlaylistName(e.target.value)} placeholder="Nombre de la playlist *" maxLength={80}
+                        style={{ flex: 2, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.65rem', padding: '0.65rem 0.9rem', color: 'white', fontSize: '0.88rem', outline: 'none', fontFamily: 'inherit' }} />
+                      <input value={newPlaylistDesc} onChange={e => setNewPlaylistDesc(e.target.value)} placeholder="Descripción (opcional)"
+                        style={{ flex: 3, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.65rem', padding: '0.65rem 0.9rem', color: 'white', fontSize: '0.88rem', outline: 'none', fontFamily: 'inherit' }} />
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.5rem' }}>Canciones — Pegá desde Excel: <strong style={{ color: '#e2e8f0' }}>Título · Artista · Género · BPM</strong></div>
+                    <textarea value={playlistImportText} onChange={e => { setPlaylistImportText(e.target.value); setPlaylistPreviewRows(parseRows(e.target.value)); }}
+                      placeholder={"Pegá canciones desde Excel o escríbelas...\nUna por línea, separadas por tabs o comas"}
+                      style={{ width: '100%', minHeight: 140, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.75rem', color: 'white', fontSize: '0.83rem', padding: '0.75rem 1rem', resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+                    {playlistPreviewRows.length > 0 && (
+                      <div style={{ marginTop: '0.75rem', fontSize: '0.72rem', color: '#22c55e' }}>✓ {playlistPreviewRows.length} canciones detectadas</div>
+                    )}
+                    {playlistImportStatus.type !== 'idle' && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.9rem', borderRadius: '0.55rem', fontSize: '0.8rem', fontWeight: '600', background: playlistImportStatus.type === 'success' ? 'rgba(34,197,94,0.1)' : playlistImportStatus.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(139,92,246,0.08)', color: playlistImportStatus.type === 'success' ? '#22c55e' : playlistImportStatus.type === 'error' ? '#ef4444' : '#a78bfa', border: `1px solid ${playlistImportStatus.type === 'success' ? 'rgba(34,197,94,0.25)' : playlistImportStatus.type === 'error' ? 'rgba(239,68,68,0.25)' : 'rgba(139,92,246,0.2)'}` }}>
+                        {playlistImportStatus.message}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem' }}>
+                      <button type="button" onClick={() => { setShowCreatePlaylist(false); setNewPlaylistName(''); setNewPlaylistDesc(''); setPlaylistImportText(''); setPlaylistPreviewRows([]); setPlaylistImportStatus({ type: 'idle', message: '' }); }}
+                        style={{ padding: '0.6rem 1.2rem', borderRadius: '0.65rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem' }}>
+                        Cancelar
+                      </button>
+                      <button type="button" onClick={handleCreatePlaylist} disabled={!newPlaylistName.trim() || playlistPreviewRows.length === 0 || playlistImportStatus.type === 'loading'}
+                        style={{ flex: 1, padding: '0.6rem 1.2rem', borderRadius: '0.65rem', background: (newPlaylistName.trim() && playlistPreviewRows.length > 0) ? 'linear-gradient(135deg, #db2777, #ec4899)' : 'rgba(255,255,255,0.05)', border: 'none', color: (newPlaylistName.trim() && playlistPreviewRows.length > 0) ? 'white' : 'rgba(255,255,255,0.25)', fontWeight: '800', cursor: (newPlaylistName.trim() && playlistPreviewRows.length > 0) ? 'pointer' : 'not-allowed', fontSize: '0.85rem' }}>
+                        {playlistImportStatus.type === 'loading' ? '⏳ Creando...' : `Crear Playlist${playlistPreviewRows.length > 0 ? ` con ${playlistPreviewRows.length} canciones` : ''}`}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Playlists list */}
+                {playlistsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(236,72,153,0.2)', borderTopColor: '#ec4899', animation: 'spin 0.9s linear infinite' }} />
+                    <span style={{ color: '#64748b', fontSize: '0.82rem' }}>Cargando playlists...</span>
+                  </div>
+                ) : playlists.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
+                    No hay playlists. Creá la primera con el botón de arriba.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {playlists.map((pl: any) => (
+                      <div key={pl.id} style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '1rem', overflow: 'hidden' }}>
+
+                        {/* Playlist header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.9rem 1.2rem', cursor: 'pointer' }}
+                          onClick={() => setExpandedPlaylist(expandedPlaylist === pl.id ? null : pl.id)}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              📋 {pl.name}
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(236,72,153,0.15)', color: '#f472b6', borderRadius: '9999px', padding: '0.15rem 0.55rem', fontWeight: '700' }}>{pl.songs?.length || 0} canciones</span>
+                            </div>
+                            {pl.description && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.15rem' }}>{pl.description}</div>}
+                          </div>
+                          <button type="button" onClick={e => { e.stopPropagation(); handleDeletePlaylist(pl.id, pl.name); }}
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '0.5rem', color: '#ef4444', padding: '0.3rem 0.55rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            🗑️ Eliminar
+                          </button>
+                          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', transform: expandedPlaylist === pl.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</div>
+                        </div>
+
+                        {/* Expanded playlist content */}
+                        {expandedPlaylist === pl.id && (
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '1rem 1.2rem' }}>
+
+                            {/* Songs list */}
+                            <div style={{ marginBottom: '1rem', maxHeight: 280, overflowY: 'auto' }}>
+                              {pl.songs?.length === 0 ? (
+                                <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', textAlign: 'center', padding: '1rem' }}>Sin canciones todavía</div>
+                              ) : (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                      {['Título', 'Artista', 'Género', 'BPM', ''].map(h => <th key={h} style={{ padding: '0.4rem 0.75rem', textAlign: 'left', color: 'rgba(255,255,255,0.25)', fontWeight: '700', fontSize: '0.6rem', textTransform: 'uppercase' }}>{h}</th>)}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {pl.songs.map((s: any) => (
+                                      <tr key={s.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                        <td style={{ padding: '0.4rem 0.75rem', fontWeight: '600', color: '#f1f5f9' }}>{s.title}</td>
+                                        <td style={{ padding: '0.4rem 0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s.artist}</td>
+                                        <td style={{ padding: '0.4rem 0.75rem', color: 'rgba(255,255,255,0.3)' }}>{s.category || '—'}</td>
+                                        <td style={{ padding: '0.4rem 0.75rem' }}>{s.bpm ? <span style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', borderRadius: '0.2rem', padding: '0.1rem 0.3rem', fontWeight: '700', fontSize: '0.68rem' }}>{s.bpm}</span> : <span style={{ color: 'rgba(255,255,255,0.15)' }}>—</span>}</td>
+                                        <td style={{ padding: '0.4rem 0.75rem', textAlign: 'right' }}>
+                                          <button type="button" onClick={() => handleDeleteSong(s.id)}
+                                            style={{ background: 'none', border: 'none', color: 'rgba(239,68,68,0.6)', cursor: 'pointer', padding: '0.2rem', borderRadius: '0.3rem', fontSize: '0.9rem' }}
+                                            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.6)')} title="Eliminar canción">✕</button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+
+                            {/* Add songs to existing playlist */}
+                            {addToPlaylistId === pl.id ? (
+                              <div style={{ background: 'rgba(236,72,153,0.05)', border: '1px solid rgba(236,72,153,0.2)', borderRadius: '0.75rem', padding: '1rem' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.1em', color: '#f472b6', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Agregar canciones</div>
+                                <textarea value={addSongsText} onChange={e => { setAddSongsText(e.target.value); setAddSongsPreview(parseRows(e.target.value)); }}
+                                  placeholder={"Pegá canciones desde Excel...\nTítulo · Artista · Género · BPM"}
+                                  style={{ width: '100%', minHeight: 110, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', color: 'white', fontSize: '0.8rem', padding: '0.65rem 0.85rem', resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+                                {addSongsPreview.length > 0 && <div style={{ fontSize: '0.72rem', color: '#22c55e', marginTop: '0.35rem' }}>✓ {addSongsPreview.length} canciones detectadas</div>}
+                                {addSongsStatus.type !== 'idle' && (
+                                  <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: '600', background: addSongsStatus.type === 'success' ? 'rgba(34,197,94,0.1)' : addSongsStatus.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(139,92,246,0.08)', color: addSongsStatus.type === 'success' ? '#22c55e' : addSongsStatus.type === 'error' ? '#ef4444' : '#a78bfa' }}>
+                                    {addSongsStatus.message}
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                                  <button type="button" onClick={() => { setAddToPlaylistId(null); setAddSongsText(''); setAddSongsPreview([]); setAddSongsStatus({ type: 'idle', message: '' }); }}
+                                    style={{ padding: '0.5rem 1rem', borderRadius: '0.6rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontWeight: '700', cursor: 'pointer', fontSize: '0.78rem' }}>Cancelar</button>
+                                  <button type="button" onClick={() => handleAddSongsToPlaylist(pl.id)} disabled={addSongsPreview.length === 0 || addSongsStatus.type === 'loading'}
+                                    style={{ flex: 1, padding: '0.5rem 1rem', borderRadius: '0.6rem', background: addSongsPreview.length > 0 ? 'linear-gradient(135deg, #db2777, #ec4899)' : 'rgba(255,255,255,0.05)', border: 'none', color: addSongsPreview.length > 0 ? 'white' : 'rgba(255,255,255,0.25)', fontWeight: '800', cursor: addSongsPreview.length > 0 ? 'pointer' : 'not-allowed', fontSize: '0.82rem' }}>
+                                    {addSongsStatus.type === 'loading' ? '⏳ Guardando...' : `Agregar ${addSongsPreview.length > 0 ? addSongsPreview.length + ' canciones' : ''}`}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => { setAddToPlaylistId(pl.id); setAddSongsText(''); setAddSongsPreview([]); setAddSongsStatus({ type: 'idle', message: '' }); }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.5rem 1rem', borderRadius: '0.65rem', background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.2)', color: '#f472b6', fontWeight: '700', cursor: 'pointer', fontSize: '0.78rem' }}>
+                                <Plus size={13} /> Agregar canciones a esta playlist
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
 
