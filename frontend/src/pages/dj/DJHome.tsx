@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { events, billing as billingApi } from '../../api/api';
 import {
   Search, Radio,
-  FileText, Download, LogOut, Zap, Copy, HelpCircle, List,
+  FileText, LogOut, Zap, Copy, HelpCircle, List,
   Music2, MapPin, Play, XCircle, Trash2, Image, Clock, Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -517,12 +517,11 @@ const DJHome = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#475569', fontSize: '0.72rem', marginBottom: '0.85rem' }}>
                     <MapPin size={10} /> {ev.venue}
                   </div>
-                  <div style={{ display: 'flex', gap: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.65rem' }}>
-                    {[
-                      { icon: <FileText size={11} />, label: 'Resumen', tip: 'Ver estadísticas del evento',           action: (e: React.MouseEvent) => { e.stopPropagation(); navigate(`/dj/events/${ev.id}/summary`); } },
-                      { icon: <Download size={11} />, label: 'CSV',     tip: 'Descargar datos en Excel',              action: (e: React.MouseEvent) => handleExport(ev, e) },
-                      { icon: <Copy size={11} />,     label: 'Dup',     tip: 'Duplicar con el mismo set de canciones', action: (e: React.MouseEvent) => handleDuplicate(ev, e) },
-                    ].map(btn => (
+                    <div style={{ display: 'flex', gap: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.65rem' }}>
+                      {[
+                        { icon: <FileText size={11} />, label: 'Resumen', tip: 'Ver estadísticas del evento',           action: (e: React.MouseEvent) => { e.stopPropagation(); navigate(`/dj/events/${ev.id}/summary`); } },
+                        { icon: <Copy size={11} />,     label: 'Dup',     tip: 'Duplicar con el mismo set de canciones', action: (e: React.MouseEvent) => handleDuplicate(ev, e) },
+                      ].map(btn => (
                       <Tooltip key={btn.label} tip={btn.tip}>
                         <button type="button"
                           onClick={btn.action}
