@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart2, Users, Music, Zap, Activity, Globe,
   AlertTriangle, TrendingUp, LogOut, RefreshCw, Wifi,
-  UserCheck, Percent, AlertCircle, ScrollText
+  UserCheck, Percent, AlertCircle, ScrollText, Plus
 } from 'lucide-react';
 import AdminLogin, { getAdminSession, clearAdminSession } from './AdminLogin';
 
