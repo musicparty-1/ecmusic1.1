@@ -187,7 +187,137 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* ── FEATURES */}
+    {/* ── EXPERIENCES (Quince & Cumple) */}
+      <section style={{
+        position: 'relative', zIndex: 1,
+        maxWidth: 1100, margin: '0 auto',
+        padding: '2rem 1.5rem 8rem',
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          style={{ textAlign: 'center', marginBottom: '4rem' }}
+        >
+          <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-0.04em', marginBottom: '0.75rem' }}>
+            Experiencias <span style={{ color: '#8b5cf6' }}>Inolvidables</span>
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', maxWidth: 600, margin: '0 auto' }}>
+            EC Music se adapta a la energía de tu evento. Diseñado para momentos que duran para siempre.
+          </p>
+        </motion.div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '2.5rem',
+        }}>
+          {/* Quince Años */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: '2rem',
+              overflow: 'hidden',
+              border: '1px solid rgba(139,92,246,0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ height: 240, position: 'relative', overflow: 'hidden' }}>
+              <img 
+                src="/quinceanera_party_app_1777419589917.png" 
+                alt="Quince Años" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              />
+              <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                ⭐ Recomendado
+              </div>
+            </div>
+            <div style={{ padding: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Quince Años Mágicos</h3>
+              <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                Tu noche, tu ritmo. Haz que tus mejores amigos sean los co-DJs de tu fiesta de 15. Con EC Music, cada tanda de baile es una competencia por el hit del momento.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
+                  <Zap size={14} color="#8b5cf6" /> Votación masiva en tandas locas
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
+                  <Zap size={14} color="#8b5cf6" /> QR personalizados en cada mesa
+                </li>
+              </ul>
+              <button 
+                onClick={() => navigate('/dj/register')}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '1rem', background: 'white', color: 'black', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#8b5cf6'; e.currentTarget.style.color = 'white'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'black'; }}
+              >
+                Organizar mis 15
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Cumpleaños */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: '2rem',
+              overflow: 'hidden',
+              border: '1px solid rgba(236,72,153,0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ height: 240, position: 'relative', overflow: 'hidden' }}>
+              <img 
+                src="/birthday_celebration_music_1777419603960.png" 
+                alt="Cumpleaños" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              />
+              <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                🔥 Popular
+              </div>
+            </div>
+            <div style={{ padding: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Cumpleaños Inolvidables</h3>
+              <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                ¿Cansado de la misma lista de siempre? Deja que tus invitados voten sus temas favoritos. Desde los clásicos que todos aman hasta los hits del momento.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
+                  <Zap size={14} color="#ec4899" /> Ranking en vivo para proyectar
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
+                  <Zap size={14} color="#ec4899" /> Estadísticas finales del evento
+                </li>
+              </ul>
+              <button 
+                onClick={() => navigate('/dj/register')}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '1rem', background: 'white', color: 'black', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#ec4899'; e.currentTarget.style.color = 'white'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'black'; }}
+              >
+                Planear mi cumple
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── TECHNICAL FEATURES */}
       <section style={{
         position: 'relative', zIndex: 1,
         maxWidth: 900, margin: '0 auto',
@@ -204,7 +334,7 @@ const Landing = () => {
             Todo lo que necesitás
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem' }}>
-            Desde el primer evento hasta una residencia permanente.
+            Control total para el DJ, diversión máxima para el público.
           </p>
         </motion.div>
 

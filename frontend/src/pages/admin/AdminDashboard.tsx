@@ -360,8 +360,15 @@ function AdminDashboardContent({ session, onLogout }: {
   const parseImportText = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
     return lines.map(line => {
-      // Support tab-separated (Excel paste) or comma-separated
-      const sep = line.includes('\t') ? '\t' : ',';
+      // Detect separator: Tab (Excel), then check for multiple spaces, fallback to comma
+      let sep: string | RegExp = ',';
+      if (line.includes('\t')) {
+        sep = '\t';
+      } else if (!line.includes(',') && /\s{2,}/.test(line)) {
+        // If no comma but has 2+ spaces, use spaces as separator
+        sep = /\s{2,}/;
+      }
+      
       const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
       return {
         title: cols[0] || '',
@@ -678,7 +685,7 @@ function AdminDashboardContent({ session, onLogout }: {
                         style={{ flex: 3, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.65rem', padding: '0.65rem 0.9rem', color: 'white', fontSize: '0.88rem', outline: 'none', fontFamily: 'inherit' }} />
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', marginBottom: '0.5rem' }}>Canciones — Pegá desde Excel: <strong style={{ color: '#e2e8f0' }}>Título · Artista · Género · BPM</strong></div>
-                    <textarea value={playlistImportText} onChange={e => { setPlaylistImportText(e.target.value); setPlaylistPreviewRows(parseRows(e.target.value)); }}
+                    <textarea value={playlistImportText} onChange={e => { setPlaylistImportText(e.target.value); setPlaylistPreviewRows(parseImportText(e.target.value)); }}
                       placeholder={"Pegá canciones desde Excel o escríbelas...\nUna por línea, separadas por tabs o comas"}
                       style={{ width: '100%', minHeight: 140, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.75rem', color: 'white', fontSize: '0.83rem', padding: '0.75rem 1rem', resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }} />
                     {playlistPreviewRows.length > 0 && (
@@ -773,7 +780,7 @@ function AdminDashboardContent({ session, onLogout }: {
                             {addToPlaylistId === pl.id ? (
                               <div style={{ background: 'rgba(236,72,153,0.05)', border: '1px solid rgba(236,72,153,0.2)', borderRadius: '0.75rem', padding: '1rem' }}>
                                 <div style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '0.1em', color: '#f472b6', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Agregar canciones</div>
-                                <textarea value={addSongsText} onChange={e => { setAddSongsText(e.target.value); setAddSongsPreview(parseRows(e.target.value)); }}
+                                <textarea value={addSongsText} onChange={e => { setAddSongsText(e.target.value); setAddSongsPreview(parseImportText(e.target.value)); }}
                                   placeholder={"Pegá canciones desde Excel...\nTítulo · Artista · Género · BPM"}
                                   style={{ width: '100%', minHeight: 110, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', color: 'white', fontSize: '0.8rem', padding: '0.65rem 0.85rem', resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }} />
                                 {addSongsPreview.length > 0 && <div style={{ fontSize: '0.72rem', color: '#22c55e', marginTop: '0.35rem' }}>✓ {addSongsPreview.length} canciones detectadas</div>}
