@@ -219,6 +219,8 @@ function AdminDashboardContent({ session, onLogout }: {
   const [addSongsText, setAddSongsText] = useState('');
   const [addSongsPreview, setAddSongsPreview] = useState<{ title: string; artist: string; genre: string; bpm: string }[]>([]);
   const [addSongsStatus, setAddSongsStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const fetchAll = async (silent = false) => {
     if (!silent) { setLoading(true); setFetchError(null); }
@@ -482,6 +484,22 @@ function AdminDashboardContent({ session, onLogout }: {
       if (expandedPlaylist === playlistId) setExpandedPlaylist(null);
       fetchPlaylists();
     } catch { /* silent */ }
+  };
+
+  const handleDeleteEvent = async (id: number) => {
+    try {
+      const res = await fetch(`${BASE}/events/admin-delete/${id}?key=${ADMIN_KEY}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setEvents(prev => prev.filter(e => e.id !== id));
+        setDeletingEventId(null);
+        setDeleteConfirm(false);
+        fetchAll(true);
+      }
+    } catch (err) {
+      console.error('Error deleting event:', err);
+    }
   };
 
   return (
@@ -963,7 +981,7 @@ function AdminDashboardContent({ session, onLogout }: {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        {['#', 'Evento', 'Lugar', 'Estado', 'Activos', 'Votos', 'Votantes', 'Votos/usr', 'Canciones', 'Top canción'].map(h => (
+                        {['#', 'Evento', 'Lugar', 'Estado', 'Activos', 'Votos', 'Votantes', 'Votos/usr', 'Canciones', 'Top canción', 'Acciones'].map(h => (
                           <th key={h} style={{ padding: '0.65rem 1rem', textAlign: 'left', color: 'rgba(255,255,255,0.25)', fontWeight: '700', letterSpacing: '0.05em', fontSize: '0.62rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
@@ -983,6 +1001,33 @@ function AdminDashboardContent({ session, onLogout }: {
                           <td style={{ padding: '0.75rem 1rem', color: '#f59e0b', fontWeight: '700', fontVariantNumeric: 'tabular-nums' }}>{ev.avgVotesPerVoter > 0 ? ev.avgVotesPerVoter : '—'}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.4)', fontVariantNumeric: 'tabular-nums' }}>{ev.songCount}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.3)', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.topSong}</td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            {deletingEventId === ev.id ? (
+                              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                <button
+                                  onClick={() => handleDeleteEvent(ev.id)}
+                                  style={{ background: '#ef4444', border: 'none', borderRadius: '0.4rem', color: 'white', padding: '0.2rem 0.5rem', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}
+                                >
+                                  CONFIRMAR
+                                </button>
+                                <button
+                                  onClick={() => setDeletingEventId(null)}
+                                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '0.4rem', color: 'white', padding: '0.2rem 0.5rem', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer' }}
+                                >
+                                  X
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeletingEventId(ev.id)}
+                                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '0.4rem', color: '#ef4444', padding: '0.2rem 0.5rem', fontSize: '0.65rem', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+                              >
+                                BORRAR
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

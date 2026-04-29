@@ -137,6 +137,12 @@ export class EventsController {
     return { count: this.activeDevices.getActiveCount(id) };
   }
 
+  @Delete('admin-delete/:id')
+  deleteAdmin(@Param('id', ParseIntPipe) id: number, @Query('key') key: string) {
+    if (key !== 'mp-admin-secret-2024') throw new ForbiddenException('Invalid key');
+    return this.eventsService.delete(id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   delete(@Param('id', ParseIntPipe) id: number) {
