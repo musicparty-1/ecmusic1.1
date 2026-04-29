@@ -187,10 +187,10 @@ const Landing = () => {
         </motion.div>
       </section>
 
-    {/* ── EXPERIENCES (Quince & Cumple) */}
+    {/* ── EXPERIENCES (Quince, Cumple, Nightclub, Retro) */}
       <section style={{
         position: 'relative', zIndex: 1,
-        maxWidth: 1100, margin: '0 auto',
+        maxWidth: 1200, margin: '0 auto',
         padding: '2rem 1.5rem 8rem',
       }}>
         <motion.div
@@ -204,116 +204,101 @@ const Landing = () => {
             Experiencias <span style={{ color: '#8b5cf6' }}>Inolvidables</span>
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', maxWidth: 600, margin: '0 auto' }}>
-            EC Music se adapta a la energía de tu evento. Diseñado para momentos que duran para siempre.
+            EC Music se adapta a la energía de cada noche. Desde la elegancia de un evento social hasta la explosión del boliche.
           </p>
         </motion.div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '2.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '2rem',
         }}>
-          {/* Quince Años */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              borderRadius: '2rem',
-              overflow: 'hidden',
-              border: '1px solid rgba(139,92,246,0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ height: 240, position: 'relative', overflow: 'hidden' }}>
-              <img 
-                src="/quinceanera_party_app_1777419589917.png" 
-                alt="Quince Años" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              />
-              <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                ⭐ Recomendado
+          {[
+            {
+              title: 'Quince Años Mágicos',
+              desc: 'Haz que tus mejores amigos sean los co-DJs de tu fiesta de 15. Cada tanda de baile es una competencia por el hit del momento.',
+              img: '/quinceanera_party_app_1777419589917.png',
+              tag: '⭐ Recomendado',
+              color: '#8b5cf6',
+              features: ['Votación masiva en tandas locas', 'QR personalizados por mesa']
+            },
+            {
+              title: 'Cumpleaños Inolvidables',
+              desc: '¿Cansado de la misma lista de siempre? Deja que tus invitados voten sus temas favoritos. Desde clásicos hasta hits del momento.',
+              img: '/birthday_celebration_music_1777419603960.png',
+              tag: '🔥 Popular',
+              color: '#ec4899',
+              features: ['Ranking en vivo proyectado', 'Estadísticas finales del evento']
+            },
+            {
+              title: 'Boliches & Discos',
+              desc: 'Aumenta el engagement en tu pista. Los clientes eligen qué hit de reggaetón o electrónica quieren que suene a continuación.',
+              img: '/nightclub_voting_experience_1777425766129.png',
+              tag: '⚡ Explosivo',
+              color: '#06b6d4',
+              features: ['Integración con pantalla gigante', 'Modo Recital de alta velocidad']
+            },
+            {
+              title: 'Eventos Retro',
+              desc: 'La nostalgia interactiva. Deja que el público decida qué clásico de los 80, 90 o 2000 nos hará volver a vivir el momento.',
+              img: '/retro_party_music_voting_1777425779058.png',
+              tag: '📻 Nostalgia',
+              color: '#f59e0b',
+              features: ['Catálogos curados por década', 'Trivia musical en vivo']
+            }
+          ].map((exp, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              viewport={{ once: true }}
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '1.5rem',
+                overflow: 'hidden',
+                border: `1px solid ${exp.color}33`,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
+                <img 
+                  src={exp.img} 
+                  alt={exp.title} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                />
+                <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', border: `1px solid ${exp.color}44`, color: exp.color }}>
+                  {exp.tag}
+                </div>
               </div>
-            </div>
-            <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Quince Años Mágicos</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                Tu noche, tu ritmo. Haz que tus mejores amigos sean los co-DJs de tu fiesta de 15. Con EC Music, cada tanda de baile es una competencia por el hit del momento.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
-                  <Zap size={14} color="#8b5cf6" /> Votación masiva en tandas locas
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
-                  <Zap size={14} color="#8b5cf6" /> QR personalizados en cada mesa
-                </li>
-              </ul>
-              <button 
-                onClick={() => navigate('/dj/register')}
-                style={{ width: '100%', padding: '0.8rem', borderRadius: '1rem', background: 'white', color: 'black', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#8b5cf6'; e.currentTarget.style.color = 'white'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'black'; }}
-              >
-                Organizar mis 15
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Cumpleaños */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              borderRadius: '2rem',
-              overflow: 'hidden',
-              border: '1px solid rgba(236,72,153,0.2)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ height: 240, position: 'relative', overflow: 'hidden' }}>
-              <img 
-                src="/birthday_celebration_music_1777419603960.png" 
-                alt="Cumpleaños" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              />
-              <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                🔥 Popular
+              <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.75rem' }}>{exp.title}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                  {exp.desc}
+                </p>
+                <div style={{ marginTop: 'auto' }}>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {exp.features.map((f, i) => (
+                      <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>
+                        <Zap size={12} color={exp.color} fill={exp.color} /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button 
+                    onClick={() => navigate('/dj/register')}
+                    style={{ width: '100%', padding: '0.7rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: `1px solid ${exp.color}55`, fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.8rem' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = exp.color; e.currentTarget.style.borderColor = 'white'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = `${exp.color}55`; }}
+                  >
+                    Me interesa
+                  </button>
+                </div>
               </div>
-            </div>
-            <div style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1rem' }}>Cumpleaños Inolvidables</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                ¿Cansado de la misma lista de siempre? Deja que tus invitados voten sus temas favoritos. Desde los clásicos que todos aman hasta los hits del momento.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
-                  <Zap size={14} color="#ec4899" /> Ranking en vivo para proyectar
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
-                  <Zap size={14} color="#ec4899" /> Estadísticas finales del evento
-                </li>
-              </ul>
-              <button 
-                onClick={() => navigate('/dj/register')}
-                style={{ width: '100%', padding: '0.8rem', borderRadius: '1rem', background: 'white', color: 'black', border: 'none', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#ec4899'; e.currentTarget.style.color = 'white'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'black'; }}
-              >
-                Planear mi cumple
-              </button>
-            </div>
-          </motion.div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
