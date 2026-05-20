@@ -97,7 +97,7 @@ export class EventsService {
     const event = await this.prisma.event.create({
       data: {
         ...eventData,
-        status: status ?? 'ACTIVE',
+        status: status ?? 'PENDING',
         startDate: event_date ? new Date(event_date) : new Date(),
         maxVotesPerDevice: 3
       },
@@ -331,7 +331,7 @@ export class EventsService {
         name: `${originalEvent.name} (Copia)`,
         venue: originalEvent.venue,
         dj_id: originalEvent.dj_id,
-        status: 'ACTIVE',
+        status: 'PENDING',
         maxVotesPerDevice: originalEvent.maxVotesPerDevice,
         isRecitalMode: originalEvent.isRecitalMode
       },

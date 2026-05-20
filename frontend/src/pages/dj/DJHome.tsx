@@ -86,8 +86,8 @@ const DJHome = () => {
         dj_id: djUser.id,
         template_id: newEvent.template_id ? parseInt(newEvent.template_id) : undefined,
         logoUrl: newEvent.logoUrl || undefined,
-        startDate: newEvent.startDate || undefined,
-        status: isScheduled ? 'PENDING' : 'ACTIVE',
+        startDate: newEvent.startDate ? new Date(newEvent.startDate).toISOString() : undefined,
+        status: 'PENDING',
       });
       const newEventId = res.data.id;
       // Copiar canciones de evento anterior si se eligió uno
@@ -106,7 +106,7 @@ const DJHome = () => {
       setShowCreateModal(false);
       setNewEvent({ name: '', venue: '', template_id: '', logoUrl: '', startDate: '', copyFromEventId: '' });
       await fetchEvents();
-      if (!isScheduled) navigate('/dj/dashboard', { state: { eventId: res.data.id } });
+      navigate('/dj/dashboard', { state: { eventId: res.data.id } });
     } catch (err: any) {
       console.error('EVENT_CREATION_FAILED:', err);
       const msg = err?.response?.data?.message || 'Error al crear evento (Ver consola)';
@@ -167,7 +167,7 @@ const DJHome = () => {
       await events.update(editingEvent.id, {
         name: editingEvent.name,
         venue: editingEvent.venue,
-        event_date: editingEvent.startDate,
+        event_date: editingEvent.startDate ? new Date(editingEvent.startDate).toISOString() : undefined,
         status: editingEvent.status
       });
       showToast('Evento actualizado');
@@ -315,7 +315,34 @@ const DJHome = () => {
           ))}
         </div>
 
-        {/* ── BILLING BANNER (HIDDEN FOR MVP) ──────────────────────────── */}
+        {/* ── BILLING BANNER ──────────────────────────── */}
+        {billingStatus && billingStatus.subscriptionStatus !== 'ACTIVE' && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+            style={{
+              marginBottom: '1.5rem',
+              background: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+              border: `1px solid ${billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.2)'}`,
+              borderRadius: '0.75rem',
+              padding: '0.75rem 1.25rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.8rem', color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#f59e0b' }}>
+              {billingStatus.subscriptionStatus === 'EXPIRED'
+                ? '⚠ Tu período de prueba expiró.'
+                : `◷ Tu prueba vence en ${billingStatus.daysLeft} días.`}
+            </span>
+            <button type="button" onClick={() => navigate('/dj/billing')} style={{
+              background: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#f59e0b',
+              color: billingStatus.subscriptionStatus === 'EXPIRED' ? 'white' : '#000',
+              border: 'none', borderRadius: '9999px', padding: '0.25rem 0.85rem',
+              fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              {billingStatus.subscriptionStatus === 'EXPIRED' ? 'Elegir plan' : 'Ver planes'}
+            </button>
+          </motion.div>
+        )}
 
         {/* ── SEARCH ──────────────────────────────────── */}
         <div style={{ position: 'relative', marginBottom: '2rem' }}>
@@ -404,7 +431,10 @@ const DJHome = () => {
                           <button type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setEditingEvent({ ...ev, startDate: ev.startDate?.split('T')[0] || '' });
+                              setEditingEvent({ 
+                                ...ev, 
+                                startDate: ev.startDate ? new Date(new Date(ev.startDate).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' 
+                              });
                               setShowEditModal(true);
                             }}
                             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--text-muted)', borderRadius: '8px', padding: '0.3rem 0.55rem', cursor: 'pointer', fontSize: '0.65rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem', fontFamily: 'inherit', transition: 'all 0.15s' }}
@@ -646,6 +676,23 @@ const DJHome = () => {
                       onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                     />
                   </div>
+
+                  {/* Logo URL */}
+                  <div style={{ position: 'relative' }}>
+                    <Image size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#4b5563', pointerEvents: 'none' }} />
+                    <input type="url" placeholder="URL del logo (opcional)" value={newEvent.logoUrl}
+                      onChange={(e) => setNewEvent({ ...newEvent, logoUrl: e.target.value })}
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        paddingLeft: '2.6rem', paddingRight: '1rem', paddingTop: '0.8rem', paddingBottom: '0.8rem',
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '0.75rem', color: 'white', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                        transition: 'border-color 0.2s',
+                      }}
+                      onFocus={e => (e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)')}
+                      onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                    />
+                  </div>
                 </div>
 
                 {/* Templates Dropdown */}
@@ -820,8 +867,8 @@ const DJHome = () => {
                     <input type="text" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box' }} value={editingEvent.venue} onChange={e => setEditingEvent({ ...editingEvent, venue: e.target.value })} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'block' }}>Fecha</label>
-                    <input type="date" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box' }} value={editingEvent.startDate} onChange={e => setEditingEvent({ ...editingEvent, startDate: e.target.value })} />
+                    <label style={{ fontSize: '0.65rem', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'block' }}>Fecha y Hora</label>
+                    <input type="datetime-local" className="edit-input-field" style={{ width: '100%', boxSizing: 'border-box', colorScheme: 'dark' }} value={editingEvent.startDate} onChange={e => setEditingEvent({ ...editingEvent, startDate: e.target.value })} />
                   </div>
                 </div>
                 

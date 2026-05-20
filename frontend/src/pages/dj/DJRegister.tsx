@@ -121,7 +121,7 @@ const DJRegister = () => {
             ))}
           </div>
 
-          {/* Trial badge (Oculto temporalmente)
+          {/* Trial badge */}
           <div style={{
             marginTop: '2rem', padding: '0.9rem 1rem', borderRadius: '0.75rem',
             background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)',
@@ -135,7 +135,6 @@ const DJRegister = () => {
               </div>
             ))}
           </div>
-          */}
         </div>
 
         <div>
@@ -168,7 +167,7 @@ const DJRegister = () => {
               Creá tu cuenta
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.35rem' }}>
-              Registrate para comenzar a usar la plataforma
+              Empezá gratis, sin tarjeta de crédito
             </p>
           </div>
 
@@ -305,7 +304,7 @@ const DJRegister = () => {
               }}>
               {loading
                 ? <><Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> Creando cuenta...</>
-                : <>Crear cuenta <ArrowRight size={17} /></>}
+                : <>Empezar gratis — 30 días <ArrowRight size={17} /></>}
             </motion.button>
           </form>
 

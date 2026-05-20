@@ -80,7 +80,7 @@ const DJDashboard = () => {
   const [showEventsPanel, setShowEventsPanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [newEvent, setNewEvent] = useState({ name: '', venue: '', template_id: '', copyFromEventId: '' });
+  const [newEvent, setNewEvent] = useState({ name: '', venue: '', template_id: '', copyFromEventId: '', startDate: '' });
   const [, setActionLog] = useState<ActionEntry[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -236,24 +236,11 @@ const DJDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-launch eventos pendientes cuya hora llegó
+  // El autolanzamiento automático se ha desactivado para dar control total al DJ
+  // y evitar conflictos de zona horaria. El DJ debe lanzar el evento manualmente.
   useEffect(() => {
-    const checkAutoLaunch = async () => {
-      const pendingWithDate = myEvents.filter(e =>
-        e.status === 'PENDING' && e.startDate && new Date(e.startDate) <= new Date()
-      );
-      for (const ev of pendingWithDate) {
-        try {
-          await events.launch(ev.id);
-          showToast(`"${ev.name}" se lanzó automáticamente`, 'success');
-          fetchEvents();
-        } catch { /* silencioso */ }
-      }
-    };
-    const t = setInterval(checkAutoLaunch, 30000);
-    checkAutoLaunch();
-    return () => clearInterval(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Solo dejamos este efecto para refrescar los eventos si es necesario, 
+    // pero sin lógica de auto-lanzamiento.
   }, [myEvents]);
 
 
@@ -337,11 +324,14 @@ const DJDashboard = () => {
     if (!newEvent.name || !newEvent.venue) return;
     try {
       setIsProcessing(true);
+      const isScheduled = newEvent.startDate && new Date(newEvent.startDate) > new Date();
       const res = await events.create({
         name: newEvent.name,
         venue: newEvent.venue,
         dj_id: djUser.id,
         template_id: newEvent.template_id ? parseInt(newEvent.template_id) : undefined,
+        startDate: newEvent.startDate ? new Date(newEvent.startDate).toISOString() : undefined,
+        status: 'PENDING',
       });
       const newEventId = res.data.id;
       // Copiar canciones de evento anterior si se seleccionó uno
@@ -356,11 +346,11 @@ const DJDashboard = () => {
           showToast('Evento creado pero no se pudieron copiar las canciones', 'info');
         }
       }
-      logAction('EVENT_LAUNCHED', `Evento creado: ${newEvent.name}`, newEvent.venue);
+      logAction('EVENT_CREATED', `Evento creado: ${newEvent.name}`, newEvent.venue);
       setActionLog(getActionLog());
       showToast('Evento creado con éxito', 'success');
       setShowCreateModal(false);
-      setNewEvent({ name: '', venue: '', template_id: '', copyFromEventId: '' });
+      setNewEvent({ name: '', venue: '', template_id: '', copyFromEventId: '', startDate: '' });
       fetchEvents();
       setSelectedEventId(newEventId);
       setSelectedEvent(res.data);
@@ -503,7 +493,8 @@ const DJDashboard = () => {
         </div>
 
         {/* Center: timer + stats */}
-        {selectedEvent?.status === 'ACTIVE' && (
+        {/* Center: timer + stats */}
+        {selectedEvent?.status === 'ACTIVE' ? (
           <div className="dj-topbar-center" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', overflow: 'hidden' }}>
             <span className="chip chip-cyan" style={{ fontFamily: '"Courier New", monospace', fontSize: '1.2rem', padding: '0.4rem 1rem', borderRadius: '0.75rem', fontWeight: '900', letterSpacing: '0.12em', flexShrink: 0, background: 'rgba(6,182,212,0.15)', border: '2px solid rgba(6,182,212,0.4)' }}>
               {formatElapsed(elapsed)}
@@ -526,10 +517,57 @@ const DJDashboard = () => {
               ))}
             </div>
           </div>
-        )}
+        ) : selectedEvent?.status === 'PENDING' ? (
+          <div className="dj-topbar-center" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', padding: '0.5rem 1rem', borderRadius: '0.75rem' }}>
+                <Clock size={16} color="#f59e0b" />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase' }}>Estado</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'white' }}>PRE-EVENTO (PROGRAMADO)</div>
+                </div>
+             </div>
+             <motion.button 
+               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+               onClick={async () => {
+                 if (!window.confirm('¿Deseas lanzar este evento "En Vivo" ahora?')) return;
+                 try {
+                   await events.launch(selectedEventId!);
+                   showToast('¡Evento iniciado! Ahora el público puede votar.', 'success');
+                   fetchEvents();
+                 } catch { showToast('Error al lanzar evento', 'error'); }
+               }}
+               style={{ 
+                 background: 'linear-gradient(135deg, #10b981, #059669)',
+                 border: 'none', color: 'white', fontWeight: '800', 
+                 padding: '0.65rem 1.5rem', borderRadius: '9999px',
+                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                 boxShadow: '0 8px 20px rgba(16,185,129,0.3)',
+                 fontSize: '0.9rem', letterSpacing: '0.02em'
+               }}
+             >
+               <Zap size={16} fill="white" /> PASAR A EN VIVO
+             </motion.button>
+          </div>
+        ) : null}
         {/* Right: actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto', flexShrink: 0 }}>
-          {/* ── BILLING PILL (HIDDEN FOR MVP) ──────────────────────────── */}
+          {billingStatus && (
+            <button type="button" onClick={() => navigate('/dj/billing')} style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: '999px',
+              padding: '0.2rem 0.6rem',
+              fontSize: '0.72rem',
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              border: '1px solid',
+              borderColor: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.4)' : billingStatus.subscriptionStatus === 'ACTIVE' ? 'rgba(16,185,129,0.3)' : 'rgba(251,191,36,0.3)',
+              color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : billingStatus.subscriptionStatus === 'ACTIVE' ? '#10b981' : '#fbbf24',
+              fontWeight: '700',
+            }}>
+              {billingStatus.subscriptionStatus === 'EXPIRED' ? '⚠ Expirado' : billingStatus.subscriptionStatus === 'ACTIVE' ? `✓ ${billingStatus.plan}` : `◷ ${billingStatus.daysLeft}d`}
+            </button>
+          )}
 
           {/* Separator */}
           <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.08)', margin: '0 0.1rem' }} />
@@ -582,7 +620,34 @@ const DJDashboard = () => {
         </div>
       </nav>
 
-      {/* ── BILLING BANNER (HIDDEN FOR MVP) ─────────────────────────────────── */}
+      {/* ── BILLING BANNER ─────────────────────────────────── */}
+      <AnimatePresence>
+        {billingStatus && (billingStatus.subscriptionStatus === 'EXPIRED' || (billingStatus.subscriptionStatus === 'TRIAL' && billingStatus.daysLeft <= 5)) && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            style={{
+              background: billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.08)',
+              borderBottom: `1px solid ${billingStatus.subscriptionStatus === 'EXPIRED' ? 'rgba(239,68,68,0.25)' : 'rgba(251,191,36,0.2)'}`,
+              padding: '0.5rem 1.25rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.78rem', color: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#fbbf24' }}>
+              {billingStatus.subscriptionStatus === 'EXPIRED'
+                ? '⚠ Tu período de prueba expiró. Algunas funciones están bloqueadas.'
+                : `◷ Tu prueba vence en ${billingStatus.daysLeft} día${billingStatus.daysLeft !== 1 ? 's' : ''}.`}
+            </span>
+            <button type="button" onClick={() => navigate('/dj/billing')} style={{
+              background: billingStatus.subscriptionStatus === 'EXPIRED' ? '#ef4444' : '#fbbf24',
+              color: billingStatus.subscriptionStatus === 'EXPIRED' ? 'white' : '#000',
+              border: 'none', borderRadius: '999px', padding: '0.25rem 0.8rem',
+              fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer',
+            }}>
+              {billingStatus.subscriptionStatus === 'EXPIRED' ? 'Elegir plan' : 'Ver planes'}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── EVENTS DROPDOWN PANEL ──────────────────────────── */}
       <AnimatePresence>
@@ -668,7 +733,11 @@ const DJDashboard = () => {
                       <div style={{ display: 'flex', gap: '0.15rem', padding: '0.1rem 0.85rem 0.4rem', flexWrap: 'wrap' }}>
                         {isPending && (
                           <Tooltip tip="Lanzar evento ahora">
-                            <button type="button" onClick={async (e) => { e.stopPropagation(); try { await events.launch(ev.id); showToast(`"${ev.name}" lanzado`, 'success'); fetchEvents(); } catch { showToast('Error', 'error'); } }}
+                            <button type="button" onClick={async (e) => { 
+                              e.stopPropagation(); 
+                              if (!window.confirm(`¿Lanzar "${ev.name}" ahora?`)) return;
+                              try { await events.launch(ev.id); showToast(`"${ev.name}" lanzado`, 'success'); fetchEvents(); } catch { showToast('Error', 'error'); } 
+                            }}
                               style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', cursor: 'pointer', padding: '0.1rem 0.45rem', fontSize: '0.6rem', borderRadius: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.15rem', fontWeight: '700' }}>
                               <Zap size={9} /> Lanzar
                             </button>
@@ -798,7 +867,7 @@ const DJDashboard = () => {
                 {[
                   { icon: <ExternalLink size={13} />, label: 'Proyectar', action: () => { window.open(mirrorUrl, '_blank'); setShowSettingsPanel(false); } },
                   { icon: <BarChart2 size={13} />, label: 'Analytics', action: () => { selectedEventId && navigate(`/dj/events/${selectedEventId}/analytics`); setShowSettingsPanel(false); } },
-                  /* Planes y billing oculto para el MVP */
+                  { icon: <Settings size={13} />, label: 'Planes y billing', action: () => { navigate('/dj/billing'); setShowSettingsPanel(false); } },
                 ].map(item => (
                   <button key={item.label} type="button" onClick={item.action}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.5rem 0.25rem', fontSize: '0.78rem', borderBottom: '1px solid rgba(255,255,255,0.04)', fontFamily: 'inherit' }}
@@ -1266,10 +1335,49 @@ const DJDashboard = () => {
                     </select>
                   </div>
                 )}
+                {/* Fecha/hora de inicio (opcional) */}
+                {(() => {
+                  const isScheduled = newEvent.startDate && new Date(newEvent.startDate) > new Date();
+                  return (
+                    <div style={{
+                      borderRadius: '0.75rem', padding: '0.85rem 1rem',
+                      background: isScheduled ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${isScheduled ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                    }}>
+                      <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.08em', color: isScheduled ? '#f59e0b' : '#64748b', marginBottom: '0.55rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Clock size={11} /> Programar inicio (opcional)
+                      </p>
+                      <input
+                        type="datetime-local"
+                        value={newEvent.startDate}
+                        onChange={e => setNewEvent({ ...newEvent, startDate: e.target.value })}
+                        min={new Date().toISOString().slice(0, 16)}
+                        style={{
+                          width: '100%', boxSizing: 'border-box',
+                          background: 'rgba(255,255,255,0.04)', border: `1px solid ${isScheduled ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                          borderRadius: '0.65rem', color: isScheduled ? '#fbbf24' : 'white',
+                          fontSize: '0.85rem', outline: 'none', fontFamily: 'inherit',
+                          padding: '0.55rem 0.75rem', colorScheme: 'dark',
+                        }}
+                      />
+                      {isScheduled && (
+                        <p style={{ fontSize: '0.68rem', color: '#f59e0b', marginTop: '0.4rem', opacity: 0.85 }}>
+                          ◷ Se lanzará automáticamente el {new Date(newEvent.startDate).toLocaleString('es-AR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
                   <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary" style={{ flex: '0 0 auto', padding: '0.85rem 1.5rem' }}>Cancelar</button>
-                  <motion.button type="button" onClick={handleCreateEvent} className="btn-primary" disabled={isProcessing || !newEvent.name || !newEvent.venue} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1, fontSize: '1rem', fontWeight: '700', padding: '0.85rem', letterSpacing: '0.04em', opacity: (!newEvent.name || !newEvent.venue) ? 0.5 : 1 }}>
-                    {isProcessing ? 'Creando...' : 'CREAR EVENTO'}
+                  <motion.button type="button" onClick={handleCreateEvent} className="btn-primary" disabled={isProcessing || !newEvent.name || !newEvent.venue} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} 
+                    style={{ 
+                      flex: 1, fontSize: '1rem', fontWeight: '700', padding: '0.85rem', letterSpacing: '0.04em', 
+                      opacity: (!newEvent.name || !newEvent.venue) ? 0.5 : 1,
+                      background: (newEvent.startDate && new Date(newEvent.startDate) > new Date()) ? 'linear-gradient(135deg, #d97706, #f59e0b)' : undefined,
+                      color: (newEvent.startDate && new Date(newEvent.startDate) > new Date()) ? '#000' : undefined,
+                    }}>
+                    {isProcessing ? 'Creando...' : (newEvent.startDate && new Date(newEvent.startDate) > new Date()) ? '◷ PROGRAMAR' : 'CREAR EVENTO'}
                   </motion.button>
                 </div>
               </div>
