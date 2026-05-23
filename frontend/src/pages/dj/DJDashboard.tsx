@@ -66,6 +66,15 @@ const CatalogSongRow = ({ song, selectedEventId, onAdd }: { song: any; selectedE
 const DJDashboard = () => {
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [isTabVisible, setIsTabVisible] = useState(true);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [ranking, setRanking] = useState<Song[]>([]);
   const [playedSongs, setPlayedSongs] = useState<Song[]>([]);
@@ -253,15 +262,16 @@ const DJDashboard = () => {
 
     fetchRanking(selectedEventId);
 
-    // 8s is safe: avoids 429s while keeping UI reasonably fresh
+    // Dynamic polling: 8s when visible, 40s when in background
+    const intervalTime = isTabVisible ? 8000 : 40000;
     pollRef.current = setInterval(() => {
       if (isMounted.current) fetchRanking(selectedEventId);
-    }, 8000);
+    }, intervalTime);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [selectedEventId]);
+  }, [selectedEventId, isTabVisible]);
 
   const openSongModal = async () => {
     if (!selectedEventId) return;

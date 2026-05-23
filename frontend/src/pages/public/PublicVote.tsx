@@ -57,6 +57,16 @@ const PublicVote = () => {
   const [nowPlayingFlash, setNowPlayingFlash] = useState(false);
   const [voterCelebration, setVoterCelebration] = useState<Song | null>(null);
   const [activeVoters, setActiveVoters] = useState(0);
+  const [isTabVisible, setIsTabVisible] = useState(true);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const prevNowPlayingId = useRef<number | null>(null);
   const prevRankRef = useRef<Record<number, number>>({});
 
@@ -137,10 +147,11 @@ const PublicVote = () => {
 
   useEffect(() => {
     fetchData();
-    // 8s polling — same as dashboard, avoids 429s
-    const interval = setInterval(() => fetchData(true), 8000);
+    // Dynamic polling: 8s when visible, 45s when in background
+    const intervalTime = isTabVisible ? 8000 : 45000;
+    const interval = setInterval(() => fetchData(true), intervalTime);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [id, isTabVisible]);
 
   useEffect(() => {
     if (!id || !deviceId) return;
@@ -151,9 +162,11 @@ const PublicVote = () => {
       } catch { /* */ }
     };
     sendHeartbeat();
-    const hb = setInterval(sendHeartbeat, 15000);
+    // Dynamic heartbeat: 15s when visible, 90s when in background
+    const intervalTime = isTabVisible ? 15000 : 90000;
+    const hb = setInterval(sendHeartbeat, intervalTime);
     return () => clearInterval(hb);
-  }, [id, deviceId]);
+  }, [id, deviceId, isTabVisible]);
 
   const handleVote = async (songId: number) => {
     if (!deviceId || votingId) return;

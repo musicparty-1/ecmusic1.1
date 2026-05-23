@@ -1,22 +1,35 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { simpleCache } from '../common/simple-cache';
 
 @Injectable()
 export class SongsService {
   constructor(private prisma: PrismaService) {}
 
   async findAllByEvent(eventId: number) {
-    return this.prisma.song.findMany({
+    const cacheKey = `songs:event:${eventId}:all`;
+    const cached = simpleCache.get<any[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.prisma.song.findMany({
       where: { event_id: eventId, played: false },
       orderBy: { created_at: 'asc' },
     });
+    simpleCache.set(cacheKey, data, 5000);
+    return data;
   }
 
   async getPlayedSongs(eventId: number) {
-    return this.prisma.song.findMany({
+    const cacheKey = `songs:event:${eventId}:played`;
+    const cached = simpleCache.get<any[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.prisma.song.findMany({
       where: { event_id: eventId, played: true },
       orderBy: { played_at: 'desc' },
     });
+    simpleCache.set(cacheKey, data, 5000);
+    return data;
   }
 
   async markAsPlayed(id: number) {
@@ -28,10 +41,13 @@ export class SongsService {
       throw new NotFoundException('Canción no encontrada');
     }
 
-    return this.prisma.song.update({
+    const updated = await this.prisma.song.update({
       where: { id },
       data: { played: true, played_at: new Date() },
     });
+
+    simpleCache.invalidateAllPrefix(`songs:event:${song.event_id}:`);
+    return updated;
   }
 
   async search(q: string) {
@@ -40,7 +56,6 @@ export class SongsService {
         OR: [
           { title: { contains: q } },
           { artist: { contains: q } },
-
         ],
       },
       distinct: ['title', 'artist'],
@@ -52,10 +67,16 @@ export class SongsService {
     const song = await this.prisma.song.findUnique({ where: { id } });
     if (!song) throw new NotFoundException('Canción no encontrada');
     await this.prisma.vote.deleteMany({ where: { song_id: id } });
-    return this.prisma.song.delete({ where: { id } });
+    const deleted = await this.prisma.song.delete({ where: { id } });
+    simpleCache.invalidateAllPrefix(`songs:event:${song.event_id}:`);
+    return deleted;
   }
 
   async getRanking(eventId: number) {
+    const cacheKey = `songs:event:${eventId}:ranking`;
+    const cached = simpleCache.get<any[]>(cacheKey);
+    if (cached) return cached;
+
     const songs = await this.prisma.song.findMany({
       where: { event_id: eventId, played: false },
       include: {
@@ -65,7 +86,7 @@ export class SongsService {
       },
     });
 
-    return songs
+    const ranking = songs
       .sort((a, b) => b._count.votes - a._count.votes)
       .map((s) => ({
         id: s.id,
@@ -73,6 +94,9 @@ export class SongsService {
         artist: s.artist,
         votes: s._count.votes,
       }));
+
+    simpleCache.set(cacheKey, ranking, 5000);
+    return ranking;
   }
 }
 

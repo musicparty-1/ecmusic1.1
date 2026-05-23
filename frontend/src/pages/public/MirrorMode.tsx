@@ -117,6 +117,15 @@ const MirrorMode = () => {
   const [nowPlaying, setNowPlaying] = useState<Song | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [nowPlayingCelebration, setNowPlayingCelebration] = useState<Song | null>(null);
+  const [isTabVisible, setIsTabVisible] = useState(true);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
   const prevRankRef = useRef<Map<number, number>>(new Map());
   const currRankRef = useRef<Map<number, number>>(new Map());
   const prevNowPlayingIdRef = useRef<number | null>(null);
@@ -158,10 +167,12 @@ const MirrorMode = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => fetchData(true), POLL_MS);
+    // Dynamic polling: 8s when visible, 40s when in background
+    const intervalTime = isTabVisible ? POLL_MS : 40000;
+    const interval = setInterval(() => fetchData(true), intervalTime);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, isTabVisible]);
 
   const getTrend = (songId: number, currentIdx: number): 'up' | 'down' | 'same' | 'new' => {
     const prevRank = prevRankRef.current.get(songId);

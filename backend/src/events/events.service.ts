@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanService } from '../plan/plan.service';
+import { simpleCache } from '../common/simple-cache';
 
 @Injectable()
 export class EventsService {
@@ -128,11 +129,17 @@ export class EventsService {
   }
 
   async findOne(id: number) {
+    const cacheKey = `event:${id}:details`;
+    const cached = simpleCache.get<any>(cacheKey);
+    if (cached) return cached;
+
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: { songs: true },
     });
     if (!event) throw new NotFoundException('Evento no encontrado');
+    
+    simpleCache.set(cacheKey, event, 5000);
     return event;
   }
 
@@ -160,6 +167,9 @@ export class EventsService {
       data: { status: 'FINISHED' }
     });
     await this.logAction(id, event.dj_id, 'FINISH');
+    
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
     return event;
   }
 
@@ -169,6 +179,9 @@ export class EventsService {
       data: { status: 'SUSPENDED' }
     });
     await this.logAction(id, event.dj_id, 'SUSPEND');
+    
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
     return event;
   }
 
@@ -184,6 +197,9 @@ export class EventsService {
       data: updateData
     });
     await this.logAction(id, event.dj_id, 'UPDATE', data);
+    
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
     return event;
   }
 
@@ -193,26 +209,38 @@ export class EventsService {
       data: { status: 'ACTIVE' }
     });
     await this.logAction(id, event.dj_id, 'LAUNCH');
+    
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
     return event;
   }
 
   async setMaxVotes(id: number, maxVotesPerDevice: number) {
-    return this.prisma.event.update({ where: { id }, data: { maxVotesPerDevice } });
+    const event = await this.prisma.event.update({ where: { id }, data: { maxVotesPerDevice } });
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
+    return event;
   }
 
   async toggleRecitalMode(id: number) {
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException('Evento no encontrado');
-    return this.prisma.event.update({
+    const updated = await this.prisma.event.update({
       where: { id },
       data: { isRecitalMode: !event.isRecitalMode }
     });
+    simpleCache.invalidate(`event:${id}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${id}:`);
+    return updated;
   }
 
   async addSongsToEvent(eventId: number, songs: { title: string; artist: string }[]) {
-    return this.prisma.song.createMany({
+    const res = await this.prisma.song.createMany({
       data: songs.map(s => ({ ...s, event_id: eventId }))
     });
+    simpleCache.invalidate(`event:${eventId}:details`);
+    simpleCache.invalidateAllPrefix(`songs:event:${eventId}:`);
+    return res;
   }
 
   async getSummary(id: number) {

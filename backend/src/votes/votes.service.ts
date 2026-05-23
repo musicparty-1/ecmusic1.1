@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanService } from '../plan/plan.service';
+import { simpleCache } from '../common/simple-cache';
 
 @Injectable()
 export class VotesService {
@@ -53,11 +54,13 @@ export class VotesService {
       throw new BadRequestException(`Has alcanzado el límite de ${song.event.maxVotesPerDevice} votos para este evento`);
     }
 
-    return this.prisma.vote.create({
+    const vote = await this.prisma.vote.create({
       data,
     });
+
+    // Invalidar caché del evento al registrar un nuevo voto
+    simpleCache.invalidateAllPrefix(`songs:event:${song.event_id}:`);
+
+    return vote;
   }
-
-
 }
-
