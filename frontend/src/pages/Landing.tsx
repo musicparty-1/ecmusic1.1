@@ -387,9 +387,9 @@ const Landing = () => {
           }}>
             {[
               { plan: 'Demo', price: 'Gratis', color: '#64748b' },
-              { plan: 'Starter', price: '$4.999 ARS', color: '#8b5cf6' },
-              { plan: 'Pro', price: '$9.999 ARS', color: '#ec4899' },
-              { plan: 'Agency', price: '$19.999 ARS', color: '#f59e0b' },
+              { plan: 'Starter', price: '$11.999 ARS', color: '#8b5cf6' },
+              { plan: 'Pro', price: '$23.999 ARS', color: '#ec4899' },
+              { plan: 'Agency', price: '$47.999 ARS', color: '#f59e0b' },
             ].map(p => (
               <div key={p.plan} style={{
                 background: '#0d1117',

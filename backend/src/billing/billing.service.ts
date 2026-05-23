@@ -5,9 +5,9 @@ import { PlanKey, PLANS } from '../plan/plan.constants';
 import MercadoPagoConfig, { PreApprovalPlan, PreApproval } from 'mercadopago';
 
 const MP_PRICES: Record<string, number> = {
-  STARTER: 4999,
-  PRO: 9999,
-  AGENCY: 19999,
+  STARTER: 11999,
+  PRO: 23999,
+  AGENCY: 47999,
 };
 
 @Injectable()
